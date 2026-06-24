@@ -266,29 +266,30 @@ function enqueue_slick_slider() {
 }
 add_action('wp_enqueue_scripts', 'enqueue_slick_slider');
 
-function register_car_post_type() {
+function register_section_post_type() {
     $args = array(
-        'public' => true,                
-        'has_archive' => true,           
-        'rewrite' => array('slug' => 'cars'), // URL slug
+        'public' => true,
+        'has_archive' => true,
+        'rewrite' => array('slug' => 'sections'), 
         'supports' => array(
-            'title',                     
-            'editor',                    
-            'thumbnail',                 
-            'excerpt',                   
+            'title',
+            'editor',      
+            'excerpt',     
+            'thumbnail',   
         ),
         'labels' => array(
-            'name' => 'Cars',
-            'singular_name' => 'Car',
-            'add_new' => 'Add New Car',
-            'add_new_item' => 'Add New Car',
-            'edit_item' => 'Edit Car',
-            'view_item' => 'View Car',
-            'search_items' => 'Search Cars',
-            'not_found' => 'No cars found',
-            'not_found_in_trash' => 'No cars found in Trash',
+            'name' => 'Sections',
+            'singular_name' => 'Section',
+            'add_new' => 'Add New Section',
+            'add_new_item' => 'Add New Section',
+            'edit_item' => 'Edit Section',
+            'view_item' => 'View Section',
+            'search_items' => 'Search Sections',
+            'not_found' => 'No sections found',
+            'not_found_in_trash' => 'No sections found in Trash',
         ),
+        'menu_icon' => 'dashicons-layout', // Icon for the admin menu
     );
-    register_post_type('car', $args);
+    register_post_type('section', $args);
 }
-add_action('init', 'register_car_post_type');
+add_action('init', 'register_section_post_type');

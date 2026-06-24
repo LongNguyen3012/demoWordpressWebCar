@@ -32,34 +32,46 @@ get_header();
     </section>
     <?php endif; ?>
 
-    <!-- ===== 3. SECTIONS SLIDER (Repeater) ===== -->
-    <?php if (have_rows('home_sections')): ?>
+    <!-- ===== 3. SECTIONS GRID ===== -->
+     <?php 
+    $sections_query = new WP_Query(array(
+        'post_type' => 'section',
+        'posts_per_page' => -1, // Show all sections
+        'orderby' => 'date',
+        'order' => 'ASC',
+    ));
+
+    if ($sections_query->have_posts()) : ?>
     <section class="sections-grid-wrapper">
         <div class="sections-grid">
-            <?php while (have_rows('home_sections')): the_row(); 
-                $title = get_sub_field('section_title');
-                $content = get_sub_field('section_content');
-                $image = get_sub_field('section_image');
-                $layout = get_sub_field('section_layout') ?: 'medium';
+            <?php while ($sections_query->have_posts()) : $sections_query->the_post(); 
+                $title = get_the_title();
+                $excerpt = get_the_excerpt(); // Short description for the card
+                $image = get_the_post_thumbnail_url(get_the_ID(), 'medium');
+                $layout = 'medium'; // You can add an ACF field to CPT later if you want sizes
             ?>
                 <div class="section-card layout-<?php echo esc_attr($layout); ?>">
                     <?php if ($image): ?>
-                    <div class="card-image">
-                        <img src="<?php echo esc_url(wp_get_attachment_url($image)); ?>" alt="<?php echo esc_attr($title); ?>">
-                    </div>
+                    <a href="<?php the_permalink(); ?>">
+                        <div class="card-image">
+                            <img src="<?php echo esc_url($image); ?>" alt="<?php echo esc_attr($title); ?>">
+                        </div>
+                    </a>
                     <?php endif; ?>
                     <div class="card-content">
-                        <h3><?php echo esc_html($title); ?></h3>
-                        <p><?php echo esc_html($content); ?></p>
+                        <h3><a href="<?php the_permalink(); ?>"><?php echo esc_html($title); ?></a></h3>
+                        <p><?php echo esc_html($excerpt); ?></p>
+                        <a href="<?php the_permalink(); ?>" class="read-more">View Details →</a>
                     </div>
                 </div>
             <?php endwhile; ?>
         </div>
     </section>
+    <?php wp_reset_postdata(); ?>
     <?php else: ?>
     <section class="sections-grid-wrapper">
         <div class="sections-grid" style="text-align:center; padding:40px; background:#f9f9f9;">
-            <p>No sections added yet. Admin: Edit the Home page and add rows in the Repeater.</p>
+            <p>No sections added yet. <strong>Admin:</strong> Go to <strong>Sections → Add New</strong> to create some.</p>
         </div>
     </section>
     <?php endif; ?>
