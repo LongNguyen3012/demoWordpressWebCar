@@ -1,6 +1,6 @@
 <?php
 /**
- * Single Post Template (only for standard posts)
+ * Single Post Template
  */
 
 get_header();
@@ -36,7 +36,6 @@ get_header();
                     'posts_per_page' => 4,
                     'orderby' => 'rand',
                 );
-
                 $related_query = new WP_Query($related_args);
                 if ($related_query->have_posts()) : ?>
                     <div class="related-posts">

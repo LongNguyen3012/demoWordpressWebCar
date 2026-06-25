@@ -11,12 +11,10 @@ get_header();
         
         <h1 class="page-title"><?php echo single_cat_title(); ?></h1>
         
-        <!-- ===== SEPARATED FILTER TABS + SEARCH ===== -->
         <div class="news-filters">
-            <!-- Category Filter Tabs (Horizontal List) -->
             <ul class="filter-tabs">
                 <li>
-                    <a href="<?php echo get_permalink(get_option('page_for_posts')); ?>">All</a>
+                    <a href="<?php echo get_permalink(get_option('page_for_posts')); ?>">All Categories</a>
                 </li>
                 <?php 
                 $categories = get_categories();
@@ -29,7 +27,6 @@ get_header();
                 ?>
             </ul>
 
-            <!-- Search Form (Separate) -->
             <div class="search-wrapper">
                 <form method="get" action="<?php echo home_url('/'); ?>" class="search-form">
                     <input type="hidden" name="post_type" value="post" />
@@ -44,7 +41,6 @@ get_header();
             </div>
         </div>
 
-        <!-- ===== NEWS GRID ===== -->
         <?php if (have_posts()) : ?>
             <div class="news-grid">
                 <?php while (have_posts()) : the_post(); ?>
@@ -64,7 +60,6 @@ get_header();
                 <?php endwhile; ?>
             </div>
             
-            <!-- ===== PAGINATION ===== -->
             <div class="news-pagination">
                 <?php the_posts_pagination(array(
                     'mid_size' => 2,
@@ -74,7 +69,7 @@ get_header();
             </div>
             
         <?php else : ?>
-            <p>No news found in this category.</p>
+            <p>No news found. Try adjusting your filters.</p>
         <?php endif; ?>
     </div>
 </div>

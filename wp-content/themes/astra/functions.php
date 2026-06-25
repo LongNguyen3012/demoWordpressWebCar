@@ -234,8 +234,25 @@ function enqueue_slick_slider() {
         wp_enqueue_style('slick-css', 'https://cdn.jsdelivr.net/npm/slick-carousel@1.8.1/slick/slick.css');
         wp_enqueue_style('slick-theme-css', 'https://cdn.jsdelivr.net/npm/slick-carousel@1.8.1/slick/slick-theme.css');
         wp_enqueue_script('slick-js', 'https://cdn.jsdelivr.net/npm/slick-carousel@1.8.1/slick/slick.min.js', array('jquery'), '1.8.1', true);
+        
         wp_add_inline_script('slick-js', '
             jQuery(document).ready(function($) {
+                // ===== HERO BANNER SLIDER =====
+                $(".hero-slider").slick({
+                    slidesToShow: 1,
+                    slidesToScroll: 1,
+                    arrows: true,
+                    dots: false,
+                    infinite: true,
+                    speed: 500,
+                    fade: true,
+                    cssEase: "linear",
+                    autoplay: true,
+                    autoplaySpeed: 5000,
+                    pauseOnHover: true
+                });
+
+                // ===== SECTIONS GRID SLIDER =====
                 $(".sections-grid").slick({
                     slidesToShow: 3,
                     slidesToScroll: 1,
@@ -266,6 +283,9 @@ function enqueue_slick_slider() {
 }
 add_action('wp_enqueue_scripts', 'enqueue_slick_slider');
 
+// ==================================================
+// REGISTER CUSTOM POST TYPE: SECTION
+// ==================================================
 function register_section_post_type() {
     $args = array(
         'public' => true,
@@ -287,9 +307,114 @@ function register_section_post_type() {
             'search_items' => 'Search Sections',
             'not_found' => 'No sections found',
             'not_found_in_trash' => 'No sections found in Trash',
-        ),
-        'menu_icon' => 'dashicons-layout', // Icon for the admin menu
+        )
     );
     register_post_type('section', $args);
 }
 add_action('init', 'register_section_post_type');
+
+// ==================================================
+// REGISTER CUSTOM POST TYPE: BANNER
+// ==================================================
+function register_banner_post_type() {
+    $args = array(
+        'public' => true,
+        'has_archive' => false,
+        'rewrite' => array('slug' => 'banners'),
+        'publicly_queryable' => true,
+        'supports' => array('title', 'excerpt', 'thumbnail', 'editor', 'page-attributes'),
+        'labels' => array(
+            'name' => 'Banners',
+            'singular_name' => 'Banner',
+            'add_new' => 'Add New Banner',
+            'add_new_item' => 'Add New Banner',
+            'edit_item' => 'Edit Banner',
+            'view_item' => 'View Banner',
+            'search_items' => 'Search Banners',
+            'not_found' => 'No banners found',
+            'not_found_in_trash' => 'No banners found in Trash',
+        ),
+        'menu_icon' => 'dashicons-images-alt2',
+        'show_in_menu' => true,
+        'exclude_from_search' => true,
+    );
+    register_post_type('banner', $args);
+}
+add_action('init', 'register_banner_post_type');
+
+// ==================================================
+// ADD INSTRUCTION NOTE ON BANNER EDIT SCREEN
+// ==================================================
+function banner_admin_notice() {
+    global $post;
+    if ($post && $post->post_type === 'banner') {
+        ?>
+        <div class="notice notice-info" style="margin: 20px 0;">
+            <p><strong>Important:</strong> Your Banner post <strong>must contain at least one image</strong> in the content. The <strong>first image</strong> in the post will automatically become the homepage banner background.</p>
+        </div>
+        <?php
+    }
+}
+add_action('admin_notices', 'banner_admin_notice');
+
+// ==================================================
+// PREVENT BANNER PUBLISH WITHOUT ANY IMAGE
+// ==================================================
+add_action('wp_insert_post', 'validate_banner_image_on_save', 10, 3);
+function validate_banner_image_on_save($post_id, $post, $update) {
+    // Only validate Banners
+    if ($post->post_type !== 'banner') {
+        return;
+    }
+
+    // Only validate if trying to publish
+    if ($post->post_status !== 'publish') {
+        return;
+    }
+
+    // Check if content has ANY image (after WordPress sanitization)
+    $content = $post->post_content;
+    preg_match('/<img.+src=[\'"]([^\'"]+)[\'"].*>/i', $content, $matches);
+
+    if (empty($matches[1])) {
+        // Prevent publishing by setting back to draft
+        remove_action('wp_insert_post', 'validate_banner_image_on_save', 10, 3);
+        wp_update_post(array(
+            'ID' => $post_id,
+            'post_status' => 'draft'
+        ));
+        
+        // Set a transient to show the error message
+        set_transient('banner_publish_error_' . $post_id, true, 60);
+    }
+}
+
+// ==================================================
+// SHOW ERROR MESSAGE IF PUBLISH FAILED
+// ==================================================
+add_action('admin_notices', function() {
+    global $post;
+    if ($post && $post->post_type === 'banner') {
+        if (get_transient('banner_publish_error_' . $post->ID)) {
+            delete_transient('banner_publish_error_' . $post->ID);
+            ?>
+            <div class="notice notice-error is-dismissible">
+                <p><strong>Cannot Publish:</strong> A Banner post must contain <strong>at least one image</strong> in the content. Please insert an image via the "Add Media" button and try again.</p>
+            </div>
+            <?php
+        }
+    }
+});
+
+// ==================================================
+// SHOW ERROR MESSAGE IF PUBLISH FAILED
+// ==================================================
+add_action('admin_notices', function() {
+    if (isset($_GET['banner_image_error']) && $_GET['banner_image_error'] == '1') {
+        ?>
+        <div class="notice notice-error is-dismissible">
+            <p><strong>Cannot Publish:</strong> A Banner post must have an image as the <strong>first element</strong> in the content. Please add an image at the very top and try again.</p>
+        </div>
+        <?php
+    }
+});

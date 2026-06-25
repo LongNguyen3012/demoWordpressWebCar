@@ -8,19 +8,53 @@ get_header();
 
 <div class="custom-homepage">
     
-    <!-- ===== 1. HERO BANNER ===== -->
-    <section class="hero-banner" style="background-image: url('<?php echo esc_url(get_field('banner_background_image')); ?>');">
-        <div class="container">
-            <h1><?php echo esc_html(get_field('banner_title')); ?></h1>
-            <p><?php echo esc_html(get_field('banner_subtitle')); ?></p>
-            <?php 
-            $button_url = get_field('banner_button_url');
-            $button_text = get_field('banner_button_text');
-            if ($button_url && $button_text): ?>
-                <a href="<?php echo esc_url($button_url); ?>" class="btn-primary"><?php echo esc_html($button_text); ?></a>
-            <?php endif; ?>
+    <!-- ===== 1. HERO BANNER SLIDER ===== -->
+    <?php 
+    $banners_query = new WP_Query(array(
+        'post_type' => 'banner',
+        'posts_per_page' => -1,
+        'orderby' => 'menu_order',
+        'order' => 'ASC',
+    ));
+
+    if ($banners_query->have_posts()) : ?>
+        <div class="hero-slider">
+            <?php while ($banners_query->have_posts()) : $banners_query->the_post(); 
+                $content = get_the_content();
+                $image_url = '';
+                $patterns = array(
+                    '/<img.+src=[\'"]([^\'"]+)[\'"].*>/i',
+                    '/<figure.+?<img.+src=[\'"]([^\'"]+)[\'"].*>/i',
+                    '/<div.+?<img.+src=[\'"]([^\'"]+)[\'"].*>/i',
+                );
+                foreach ($patterns as $pattern) {
+                    preg_match($pattern, $content, $matches);
+                    if (!empty($matches[1])) {
+                        $image_url = $matches[1];
+                        break;
+                    }
+                }
+                $bg_style = $image_url ? 'background-image: url(' . esc_url($image_url) . ');' : 'background-color: #1a1a1a;';
+            ?>
+                <div class="hero-slide" style="<?php echo $bg_style; ?> background-size: cover; background-position: center;">
+                    <a href="<?php the_permalink(); ?>" class="hero-slide-link">
+                        <div class="container">
+                            <h1><?php the_title(); ?></h1>
+                            <p><?php echo get_the_excerpt(); ?></p>
+                        </div>
+                    </a>
+                </div>
+            <?php endwhile; ?>
         </div>
-    </section>
+        <?php wp_reset_postdata(); ?>
+    <?php else: ?>
+        <section class="hero-banner" style="background-color: #1a1a1a;">
+            <div class="container">
+                <h1 style="color: #fff;">Add your first Banner</h1>
+                <p style="color: #ccc;">Go to Banners → Add New in the admin.</p>
+            </div>
+        </section>
+    <?php endif; ?>
 
     <!-- ===== 2. INTRODUCTION ===== -->
     <?php if (get_field('intro_title') || get_field('intro_text')): ?>
@@ -32,11 +66,11 @@ get_header();
     </section>
     <?php endif; ?>
 
-    <!-- ===== 3. SECTIONS GRID ===== -->
-     <?php 
+    <!-- ===== 3. SECTIONS SLIDER ===== -->
+    <?php 
     $sections_query = new WP_Query(array(
         'post_type' => 'section',
-        'posts_per_page' => -1, // Show all sections
+        'posts_per_page' => -1,
         'orderby' => 'date',
         'order' => 'ASC',
     ));
@@ -46,24 +80,41 @@ get_header();
         <div class="sections-grid">
             <?php while ($sections_query->have_posts()) : $sections_query->the_post(); 
                 $title = get_the_title();
-                $excerpt = get_the_excerpt(); // Short description for the card
-                $image = get_the_post_thumbnail_url(get_the_ID(), 'medium');
-                $layout = 'medium'; // You can add an ACF field to CPT later if you want sizes
+                $excerpt = get_the_excerpt();
+                
+                $content = get_the_content();
+                $image_url = '';
+                $patterns = array(
+                    '/<img.+src=[\'"]([^\'"]+)[\'"].*>/i',
+                    '/<figure.+?<img.+src=[\'"]([^\'"]+)[\'"].*>/i',
+                    '/<div.+?<img.+src=[\'"]([^\'"]+)[\'"].*>/i',
+                );
+                foreach ($patterns as $pattern) {
+                    preg_match($pattern, $content, $matches);
+                    if (!empty($matches[1])) {
+                        $image_url = $matches[1];
+                        break;
+                    }
+                }
+                
+                // Fallback to Featured Image if no image in content (backward compatibility)
+                if (empty($image_url)) {
+                    $image_url = get_the_post_thumbnail_url(get_the_ID(), 'medium');
+                }
             ?>
-                <div class="section-card layout-<?php echo esc_attr($layout); ?>">
-                    <?php if ($image): ?>
-                    <a href="<?php the_permalink(); ?>">
+                <a href="<?php the_permalink(); ?>" class="section-card-link">
+                    <div class="section-card layout-medium">
+                        <?php if ($image_url): ?>
                         <div class="card-image">
-                            <img src="<?php echo esc_url($image); ?>" alt="<?php echo esc_attr($title); ?>">
+                            <img src="<?php echo esc_url($image_url); ?>" alt="<?php echo esc_attr($title); ?>">
                         </div>
-                    </a>
-                    <?php endif; ?>
-                    <div class="card-content">
-                        <h3><a href="<?php the_permalink(); ?>"><?php echo esc_html($title); ?></a></h3>
-                        <p><?php echo esc_html($excerpt); ?></p>
-                        <a href="<?php the_permalink(); ?>" class="read-more">View Details →</a>
+                        <?php endif; ?>
+                        <div class="card-content">
+                            <h3><?php echo esc_html($title); ?></h3>
+                            <p><?php echo esc_html($excerpt); ?></p>
+                        </div>
                     </div>
-                </div>
+                </a>
             <?php endwhile; ?>
         </div>
     </section>
@@ -71,7 +122,7 @@ get_header();
     <?php else: ?>
     <section class="sections-grid-wrapper">
         <div class="sections-grid" style="text-align:center; padding:40px; background:#f9f9f9;">
-            <p>No sections added yet. <strong>Admin:</strong> Go to <strong>Sections → Add New</strong> to create some.</p>
+            <p>No sections added yet. Admin: Go to Sections → Add New to create some.</p>
         </div>
     </section>
     <?php endif; ?>
@@ -96,7 +147,6 @@ get_header();
                 endif; ?>
             </div>
             
-            <!-- View All Button -->
             <div style="text-align: center; margin-top: 30px;">
                 <a href="<?php echo get_permalink( get_option( 'page_for_posts' ) ); ?>" class="btn-primary" style="background: #2C2C2C; color: #fff; padding: 12px 40px; text-decoration: none; text-transform: uppercase; letter-spacing: 2px; display: inline-block;">
                     View All News →

@@ -1,12 +1,12 @@
 <?php
 /**
- * Single Section Template
+ * Single Banner Template
  */
 
 get_header();
 ?>
 
-<div class="single-section">
+<div class="single-banner">
     <div class="container">
         
         <?php if (have_posts()) : while (have_posts()) : the_post(); ?>
@@ -15,13 +15,17 @@ get_header();
 
             <h1><?php the_title(); ?></h1>
             
+            <?php if (has_excerpt()) : ?>
+                <p class="banner-subtitle"><?php echo get_the_excerpt(); ?></p>
+            <?php endif; ?>
+            
             <?php if (has_post_thumbnail()) : ?>
-                <div class="section-featured-image">
+                <div class="banner-featured-image">
                     <?php the_post_thumbnail('large'); ?>
                 </div>
             <?php endif; ?>
             
-            <div class="section-content">
+            <div class="banner-content">
                 <?php the_content(); ?>
             </div>
             
