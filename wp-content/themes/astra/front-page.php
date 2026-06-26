@@ -20,29 +20,43 @@ get_header();
     if ($banners_query->have_posts()) : ?>
         <div class="hero-slider">
             <?php while ($banners_query->have_posts()) : $banners_query->the_post(); 
-                $content = get_the_content();
-                $image_url = '';
-                $patterns = array(
-                    '/<img.+src=[\'"]([^\'"]+)[\'"].*>/i',
-                    '/<figure.+?<img.+src=[\'"]([^\'"]+)[\'"].*>/i',
-                    '/<div.+?<img.+src=[\'"]([^\'"]+)[\'"].*>/i',
-                );
-                foreach ($patterns as $pattern) {
-                    preg_match($pattern, $content, $matches);
-                    if (!empty($matches[1])) {
-                        $image_url = $matches[1];
-                        break;
-                    }
-                }
+                
+                // ===== GET THE FEATURED IMAGE ONLY =====
+                $image_url = get_the_post_thumbnail_url(get_the_ID(), 'full');
+                
+                // If no featured image, use a dark background
                 $bg_style = $image_url ? 'background-image: url(' . esc_url($image_url) . ');' : 'background-color: #1a1a1a;';
+                
+                // ===== GET THE BUTTON DATA =====
+                $button_text = get_post_meta(get_the_ID(), 'banner_button_text', true);
+                $button_url = get_post_meta(get_the_ID(), 'banner_button_url', true);
+                
+                if (empty($button_text)) {
+                    $button_text = 'Learn More';
+                }
             ?>
                 <div class="hero-slide" style="<?php echo $bg_style; ?> background-size: cover; background-position: center;">
-                    <a href="<?php the_permalink(); ?>" class="hero-slide-link">
+                    
+                    <!-- ===== CONTENT (Title + Subtitle) ===== -->
+                    <div class="hero-content-wrapper">
                         <div class="container">
                             <h1><?php the_title(); ?></h1>
                             <p><?php echo get_the_excerpt(); ?></p>
                         </div>
-                    </a>
+                    </div>
+                    
+                    <!-- ===== BUTTON ===== -->
+                    <?php if (!empty($button_url)) : ?>
+                        <div class="hero-button-bottom-left">
+                            <a href="<?php echo esc_url($button_url); ?>" class="btn-primary">
+                                <?php echo esc_html($button_text); ?>
+                            </a>
+                        </div>
+                    <?php endif; ?>
+                    
+                    <!-- ===== PERMALINK LINK ===== -->
+                    <a href="<?php the_permalink(); ?>" class="hero-slide-link"></a>
+                    
                 </div>
             <?php endwhile; ?>
         </div>
@@ -54,16 +68,6 @@ get_header();
                 <p style="color: #ccc;">Go to Banners → Add New in the admin.</p>
             </div>
         </section>
-    <?php endif; ?>
-
-    <!-- ===== 2. INTRODUCTION ===== -->
-    <?php if (get_field('intro_title') || get_field('intro_text')): ?>
-    <section class="intro-section">
-        <div class="container">
-            <h2 class="section-title"><?php echo esc_html(get_field('intro_title')); ?></h2>
-            <p class="intro-text"><?php echo esc_html(get_field('intro_text')); ?></p>
-        </div>
-    </section>
     <?php endif; ?>
 
     <!-- ===== 3. SECTIONS SLIDER ===== -->

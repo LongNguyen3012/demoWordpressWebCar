@@ -1,0 +1,102 @@
+/* ========================================
+   CUSTOM CONTACT FORM - ADMIN STYLES v2.2
+   ======================================== */
+
+/* ---- Edit Form (Full Width) ---- */
+.ccf-edit-form {
+    max-width: 100%;
+    background: #fff;
+    padding: 20px 30px;
+    border: 1px solid #ccd0d4;
+    box-shadow: 0 1px 1px rgba(0,0,0,.04);
+}
+.ccf-edit-form .form-table { width: 100%; max-width: 100%; }
+.ccf-edit-form .form-table th {
+    width: auto;
+    min-width: 150px;
+    padding: 20px 10px 20px 0;
+    font-weight: 600;
+    vertical-align: top;
+}
+.ccf-edit-form .form-table td { padding: 20px 10px; vertical-align: top; }
+.ccf-edit-form .form-table input[type="text"],
+.ccf-edit-form .form-table input[type="email"],
+.ccf-edit-form .form-table input[type="url"],
+.ccf-edit-form .form-table textarea,
+.ccf-edit-form .form-table select {
+    width: 100%;
+    max-width: 100%;
+    padding: 8px 12px;
+    box-sizing: border-box;
+}
+.ccf-edit-form .form-table textarea { min-height: 250px; resize: vertical; }
+.ccf-edit-form .button-primary { margin-right: 10px; }
+
+/* ---- Status Colors ---- */
+.contact-submission-unread td { background-color: #f1f1f1 !important; font-weight: 500; }
+.contact-submission-read td { background-color: #ffffff !important; }
+
+/* ---- Status Dots (Legacy support if used elsewhere) ---- */
+.ccf-status-dot {
+    display: inline-block;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    margin-right: 5px;
+}
+.ccf-status-dot-unread { background: #d63638; }
+.ccf-status-dot-read { background: #46b450; }
+.ccf-status-dot-reviewed { background: #ffb900; }
+.ccf-status-dot-completed { background: #007cba; }
+
+/* ---- Unread Count Badge ---- */
+.ccf-unread-count {
+    background: #d63638;
+    color: #fff;
+    padding: 2px 8px;
+    border-radius: 50%;
+    font-size: 12px;
+    margin-left: 10px;
+}
+
+/* ---- Image Preview ---- */
+.ccf-image-preview-link {
+    display: inline-block;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    padding: 2px;
+    background: #fff;
+    line-height: 0;
+}
+.ccf-image-preview-link img {
+    max-width: 60px;
+    max-height: 60px;
+    object-fit: cover;
+    border-radius: 2px;
+    display: block;
+}
+
+/* ---- Inline Status Dropdown ---- */
+.wp-list-table .ccf-status-dropdown { width: 100%; }
+
+/* ---- Message Toggle Button ---- */
+.ccf-msg-toggle {
+    color: #007cba;
+    text-decoration: none;
+    cursor: pointer;
+    background: none;
+    border: none;
+    padding: 0;
+    font-size: 12px;
+}
+.ccf-msg-toggle:hover { color: #005a87; }
+
+/* ---- Responsive Table Fixes ---- */
+@media screen and (max-width: 782px) {
+    .wp-list-table tr { display: block; border-bottom: 2px solid #ddd; padding: 10px 0; }
+    .wp-list-table td, .wp-list-table th { display: block; width: 100% !important; box-sizing: border-box; }
+    .wp-list-table td:before { content: attr(data-label); font-weight: 600; display: inline-block; width: 40%; }
+    .ccf-edit-form .form-table th,
+    .ccf-edit-form .form-table td { display: block; width: 100%; padding: 10px 0; }
+    .ccf-edit-form .form-table th { padding-bottom: 5px; }
+}

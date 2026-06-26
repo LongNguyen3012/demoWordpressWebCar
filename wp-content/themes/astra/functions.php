@@ -319,10 +319,10 @@ add_action('init', 'register_section_post_type');
 function register_banner_post_type() {
     $args = array(
         'public' => true,
-        'has_archive' => false,
+        'has_archive' => true,
         'rewrite' => array('slug' => 'banners'),
         'publicly_queryable' => true,
-        'supports' => array('title', 'excerpt', 'thumbnail', 'editor', 'page-attributes'),
+        'supports' => array('title', 'excerpt', 'thumbnail', 'editor', 'custom-fields', 'page-attributes'),
         'labels' => array(
             'name' => 'Banners',
             'singular_name' => 'Banner',
@@ -343,6 +343,24 @@ function register_banner_post_type() {
 add_action('init', 'register_banner_post_type');
 
 // ==================================================
+// ADD PLACEHOLDER TO CUSTOM FIELDS PANEL
+// ==================================================
+function custom_fields_placeholder_script() {
+    $screen = get_current_screen();
+    if ($screen->post_type === 'banner') {
+        ?>
+        <script>
+        jQuery(document).ready(function($) {
+            $('#newmeta #metakeyselect option[value="newmeta"]').text('Enter meta key');
+            $('#postcustom').before('<p><strong>Tip:</strong> Use <code>banner_button_url</code> for the URL, and <code>banner_button_text</code> for the button text.</p>');
+        });
+        </script>
+        <?php
+    }
+}
+add_action('admin_footer', 'custom_fields_placeholder_script');
+
+// ==================================================
 // ADD INSTRUCTION NOTE ON BANNER EDIT SCREEN
 // ==================================================
 function banner_admin_notice() {
@@ -350,7 +368,7 @@ function banner_admin_notice() {
     if ($post && $post->post_type === 'banner') {
         ?>
         <div class="notice notice-info" style="margin: 20px 0;">
-            <p><strong>Important:</strong> Your Banner post <strong>must contain at least one image</strong> in the content. The <strong>first image</strong> in the post will automatically become the homepage banner background.</p>
+            <p><strong>Important:</strong> Your Banner post <strong>must have a Featured Image</strong> set. The Featured Image will be used as the banner background on the homepage.</p>
         </div>
         <?php
     }
@@ -358,34 +376,23 @@ function banner_admin_notice() {
 add_action('admin_notices', 'banner_admin_notice');
 
 // ==================================================
-// PREVENT BANNER PUBLISH WITHOUT ANY IMAGE
+// PREVENT BANNER PUBLISH WITHOUT FEATURED IMAGE
 // ==================================================
-add_action('wp_insert_post', 'validate_banner_image_on_save', 10, 3);
-function validate_banner_image_on_save($post_id, $post, $update) {
-    // Only validate Banners
+add_action('wp_insert_post', 'validate_banner_featured_image_on_save', 10, 3);
+function validate_banner_featured_image_on_save($post_id, $post, $update) {
     if ($post->post_type !== 'banner') {
         return;
     }
-
-    // Only validate if trying to publish
     if ($post->post_status !== 'publish') {
         return;
     }
-
-    // Check if content has ANY image (after WordPress sanitization)
-    $content = $post->post_content;
-    preg_match('/<img.+src=[\'"]([^\'"]+)[\'"].*>/i', $content, $matches);
-
-    if (empty($matches[1])) {
-        // Prevent publishing by setting back to draft
-        remove_action('wp_insert_post', 'validate_banner_image_on_save', 10, 3);
+    if ( ! has_post_thumbnail( $post_id ) ) {
+        remove_action('wp_insert_post', 'validate_banner_featured_image_on_save', 10, 3);
         wp_update_post(array(
             'ID' => $post_id,
             'post_status' => 'draft'
         ));
-        
-        // Set a transient to show the error message
-        set_transient('banner_publish_error_' . $post_id, true, 60);
+        set_transient('banner_publish_featured_error_' . $post_id, true, 60);
     }
 }
 
@@ -395,26 +402,57 @@ function validate_banner_image_on_save($post_id, $post, $update) {
 add_action('admin_notices', function() {
     global $post;
     if ($post && $post->post_type === 'banner') {
-        if (get_transient('banner_publish_error_' . $post->ID)) {
-            delete_transient('banner_publish_error_' . $post->ID);
+        if (get_transient('banner_publish_featured_error_' . $post->ID)) {
+            delete_transient('banner_publish_featured_error_' . $post->ID);
             ?>
             <div class="notice notice-error is-dismissible">
-                <p><strong>Cannot Publish:</strong> A Banner post must contain <strong>at least one image</strong> in the content. Please insert an image via the "Add Media" button and try again.</p>
+                <p><strong>Cannot Publish:</strong> A Banner post must have a <strong>Featured Image</strong> set. Please set a Featured Image in the sidebar and try again.</p>
             </div>
             <?php
         }
     }
 });
+// ==================================================
+// BANNER BUTTON META BOX (Custom Fields for Button Text and URL)
+// ==================================================
+function banner_button_meta_box() {
+    add_meta_box(
+        'banner_button_meta_box',
+        'Banner Button',
+        'banner_button_meta_box_html',
+        'banner',
+        'normal',
+        'default'
+    );
+}
+add_action( 'add_meta_boxes', 'banner_button_meta_box' );
 
-// ==================================================
-// SHOW ERROR MESSAGE IF PUBLISH FAILED
-// ==================================================
-add_action('admin_notices', function() {
-    if (isset($_GET['banner_image_error']) && $_GET['banner_image_error'] == '1') {
-        ?>
-        <div class="notice notice-error is-dismissible">
-            <p><strong>Cannot Publish:</strong> A Banner post must have an image as the <strong>first element</strong> in the content. Please add an image at the very top and try again.</p>
-        </div>
-        <?php
+function banner_button_meta_box_html( $post ) {
+    wp_nonce_field( 'banner_button_save', 'banner_button_nonce' );
+    $button_text = get_post_meta( $post->ID, 'banner_button_text', true );
+    $button_url = get_post_meta( $post->ID, 'banner_button_url', true );
+    ?>
+    <p>
+        <label for="banner_button_text"><strong>Button Text</strong></label><br>
+        <input type="text" id="banner_button_text" name="banner_button_text" value="<?php echo esc_attr( $button_text ); ?>" style="width:100%; padding:8px;" placeholder="e.g. Learn More" />
+    </p>
+    <p>
+        <label for="banner_button_url"><strong>Button URL</strong></label><br>
+        <input type="url" id="banner_button_url" name="banner_button_url" value="<?php echo esc_url( $button_url ); ?>" style="width:100%; padding:8px;" placeholder="https://example.com" />
+    </p>
+    <?php
+}
+
+function save_banner_button_meta_box( $post_id ) {
+    if ( defined( 'DOING_AUTOSAVE' ) && DOING_AUTOSAVE ) return;
+    if ( ! isset( $_POST['banner_button_nonce'] ) || ! wp_verify_nonce( $_POST['banner_button_nonce'], 'banner_button_save' ) ) return;
+    if ( ! current_user_can( 'edit_post', $post_id ) ) return;
+
+    if ( isset( $_POST['banner_button_text'] ) ) {
+        update_post_meta( $post_id, 'banner_button_text', sanitize_text_field( $_POST['banner_button_text'] ) );
     }
-});
+    if ( isset( $_POST['banner_button_url'] ) ) {
+        update_post_meta( $post_id, 'banner_button_url', esc_url_raw( $_POST['banner_button_url'] ) );
+    }
+}
+add_action( 'save_post_banner', 'save_banner_button_meta_box' );

@@ -1,0 +1,916 @@
+/* ========================================
+   additional css codes to paste on the custom css section of the theme app
+   ======================================== */
+
+/* ========================================
+   FORCE CENTERING ON ALL PAGES (ASTRA OVERRIDE)
+   ======================================== */
+.ast-container,
+.site-content,
+.ast-row {
+    display: block !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    margin: 0 auto !important;
+    padding: 0 20px !important;
+    box-sizing: border-box !important;
+    float: none !important;
+    clear: both !important;
+}
+
+#primary {
+    display: block !important;
+    width: 100% !important;
+    max-width: 1200px !important;
+    margin: 0 auto !important;
+    float: none !important;
+    clear: both !important;
+    padding: 0 20px !important;
+    box-sizing: border-box !important;
+}
+
+body {
+    font-family: 'Inter', 'Roboto', sans-serif;
+    color: #2C2C2C;
+    background: #FFFFFF;
+    line-height: 1.6;
+    margin: 0;
+    padding: 0;
+}
+
+.container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 20px;
+}
+
+/* ========================================
+   HERO BANNER SLIDER
+   ======================================== */
+.hero-slider {
+    width: 100%;
+    overflow: hidden;
+    position: relative;
+}
+
+.hero-slide {
+    min-height: 60vh;
+    display: flex !important;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    background-size: cover !important;
+    background-position: center !important;
+    position: relative;
+}
+
+.hero-slide::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.15) !important;
+    z-index: 1;
+}
+
+.hero-slide-link {
+    display: block;
+    width: 100%;
+    height: 100%;
+    text-decoration: none;
+    color: inherit;
+    position: relative;
+    z-index: 2;
+    padding: 100px 0;
+}
+
+.hero-slide .container {
+    position: relative;
+    z-index: 2;
+    color: #fff;
+    max-width: 1200px;
+    padding: 0 40px;
+    width: 100%;
+}
+
+.hero-slide h1 {
+    font-size: clamp(2.5rem, 8vw, 4.5rem);
+    font-weight: 300 !important;
+    letter-spacing: 4px !important;
+    margin-bottom: 20px;
+    color: #fff !important;
+    text-shadow: 
+        -2px -2px 0 #000,
+        2px -2px 0 #000,
+        -2px 2px 0 #000,
+        2px 2px 0 #000,
+        0 4px 20px rgba(0, 0, 0, 0.5) !important;
+}
+
+.hero-slide p {
+    font-size: clamp(1rem, 2vw, 1.5rem);
+    font-weight: 300 !important;
+    letter-spacing: 2px !important;
+    text-transform: uppercase;
+    color: #fff !important;
+    text-shadow: 
+        -1px -1px 0 #000,
+        1px -1px 0 #000,
+        -1px 1px 0 #000,
+        1px 1px 0 #000,
+        0 2px 10px rgba(0, 0, 0, 0.5) !important;
+}
+
+.hero-slider .slick-prev,
+.hero-slider .slick-next {
+    z-index: 10;
+    width: 50px;
+    height: 50px;
+    background: rgba(0, 0, 0, 0.3) !important;
+    border-radius: 50%;
+    transition: 0.3s ease;
+}
+
+.hero-slider .slick-prev {
+    left: 20px;
+}
+
+.hero-slider .slick-next {
+    right: 20px;
+}
+
+.hero-slider .slick-prev:hover,
+.hero-slider .slick-next:hover {
+    background: rgba(0, 0, 0, 0.6) !important;
+}
+
+.hero-slider .slick-prev:before,
+.hero-slider .slick-next:before {
+    font-size: 30px;
+    color: #fff;
+    opacity: 1;
+    font-weight: 300;
+}
+
+/* ========================================
+   HERO BANNER FALLBACK
+   ======================================== */
+.hero-banner {
+    min-height: 60vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    background-size: cover;
+    background-position: center;
+    position: relative;
+}
+
+.hero-banner::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.15);
+    z-index: 1;
+}
+
+.hero-banner .container {
+    position: relative;
+    z-index: 2;
+    color: #fff;
+    max-width: 1200px;
+    padding: 0 40px;
+    width: 100%;
+}
+
+.hero-banner h1 {
+    font-size: clamp(2.5rem, 8vw, 4.5rem);
+    font-weight: 300;
+    letter-spacing: 4px;
+    margin-bottom: 20px;
+    color: #fff !important;
+    text-shadow: 
+        -2px -2px 0 #000,
+        2px -2px 0 #000,
+        -2px 2px 0 #000,
+        2px 2px 0 #000,
+        0 4px 20px rgba(0, 0, 0, 0.5) !important;
+}
+
+.hero-banner p {
+    font-size: clamp(1rem, 2vw, 1.5rem);
+    font-weight: 300;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: #fff !important;
+    text-shadow: 
+        -1px -1px 0 #000,
+        1px -1px 0 #000,
+        -1px 1px 0 #000,
+        1px 1px 0 #000,
+        0 2px 10px rgba(0, 0, 0, 0.5) !important;
+}
+
+.hero-banner .btn-primary {
+    background: #2C2C2C;
+    color: #fff;
+    padding: 14px 50px;
+    text-decoration: none;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    transition: 0.3s;
+    display: inline-block;
+}
+
+.hero-banner .btn-primary:hover {
+    background: #000;
+}
+
+/* ========================================
+   INTRODUCTION SECTION
+   ======================================== */
+.intro-section {
+    padding: 80px 0 40px 0;
+    text-align: center;
+}
+
+.intro-section .container {
+    max-width: 800px;
+}
+
+.section-title {
+    font-size: 2.5rem;
+    font-weight: 300;
+    letter-spacing: 4px;
+    margin-bottom: 20px;
+    text-transform: uppercase;
+}
+
+.intro-text {
+    font-size: 1.1rem;
+    line-height: 2;
+    color: #666;
+    max-width: 800px;
+    margin: 0 auto;
+}
+
+/* ========================================
+   SECTIONS SLIDER
+   ======================================== */
+.sections-grid-wrapper {
+    width: 100% !important;
+    padding: 60px 30px !important;
+    background: #fafafa;
+    box-sizing: border-box;
+    position: relative;
+    margin: 0 auto !important;
+    display: block !important;
+}
+
+.sections-grid-wrapper .container {
+    max-width: 100% !important;
+    padding: 0 !important;
+    margin: 0 !important;
+}
+
+.sections-grid {
+    display: block !important;
+    margin: 0 -10px;
+}
+
+.sections-grid .section-card {
+    margin: 0 10px;
+    background: #fff;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    border-bottom: 3px solid transparent;
+    overflow: hidden;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.02);
+}
+
+.sections-grid .section-card:hover {
+    transform: translateY(-10px);
+    border-bottom-color: #2C2C2C;
+    box-shadow: 0 15px 40px rgba(0, 0, 0, 0.08);
+}
+
+.sections-grid .section-card .card-image img {
+    width: 100%;
+    height: 240px;
+    object-fit: cover;
+    display: block;
+}
+
+.sections-grid .section-card .card-content {
+    padding: 20px 0 10px 0;
+}
+
+.sections-grid .section-card .card-content h3 {
+    font-size: 1.3rem;
+    font-weight: 600;
+    margin-bottom: 8px;
+}
+
+.sections-grid .section-card .card-content p {
+    color: #666;
+    font-size: 0.95rem;
+}
+
+.sections-grid .section-card.layout-small .card-image img {
+    height: 180px;
+}
+
+.sections-grid .section-card.layout-medium .card-image img {
+    height: 240px;
+}
+
+.sections-grid .section-card.layout-large .card-image img {
+    height: 320px;
+}
+
+.sections-grid .section-card.layout-full .card-image img {
+    height: 400px;
+}
+
+.sections-grid .slick-prev,
+.sections-grid .slick-next {
+    z-index: 10;
+}
+
+.sections-grid .slick-prev {
+    left: -20px;
+}
+
+.sections-grid .slick-next {
+    right: -20px;
+}
+
+.sections-grid .slick-prev:before,
+.sections-grid .slick-next:before {
+    color: #2C2C2C;
+    font-size: 30px;
+    opacity: 1;
+}
+
+.sections-grid .slick-dots {
+    bottom: -40px;
+}
+
+.sections-grid .slick-dots li button:before {
+    color: #999;
+}
+
+.sections-grid .slick-dots li.slick-active button:before {
+    color: #2C2C2C;
+}
+
+.section-card-link {
+    display: block;
+    text-decoration: none;
+    color: inherit;
+}
+
+.section-card-link:hover .section-card {
+    transform: translateY(-10px);
+    border-bottom-color: #2C2C2C;
+    box-shadow: 0 15px 40px rgba(0, 0, 0, 0.08);
+}
+
+/* ========================================
+   NEWS SECTION (HOMEPAGE)
+   ======================================== */
+.news-section {
+    padding: 60px 0;
+    background: #fff;
+}
+
+.news-section .container {
+    max-width: 800px;
+}
+
+.news-list {
+    max-width: 700px;
+    margin: 0 auto;
+}
+
+.news-item {
+    padding: 15px 0;
+    border-bottom: 1px solid #eaeaea;
+}
+
+.news-item a {
+    text-decoration: none;
+    color: #2C2C2C;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    padding: 5px 0;
+    transition: 0.3s ease;
+}
+
+.news-item a:hover {
+    color: #000;
+    padding-left: 10px;
+}
+
+.news-item .news-date {
+    color: #999;
+    font-size: 0.9rem;
+    font-weight: 300;
+}
+
+/* ========================================
+   NEWS ARCHIVE PAGE
+   ======================================== */
+.news-archive {
+    width: 100% !important;
+    clear: both !important;
+}
+
+.news-archive .container {
+    max-width: 1200px !important;
+    margin: 0 auto !important;
+    padding: 20px !important;
+    float: none !important;
+}
+
+.news-archive .page-title {
+    font-size: 36px;
+    margin-bottom: 30px;
+}
+
+.news-filters {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 20px;
+    padding: 20px 0;
+    border-bottom: 1px solid #eee;
+    margin-bottom: 30px;
+}
+
+.filter-tabs {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px 25px;
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.filter-tabs li {
+    margin: 0;
+}
+
+.filter-tabs li a {
+    text-decoration: none;
+    color: #999;
+    font-weight: 400;
+    font-size: 0.95rem;
+    padding: 5px 0;
+    border-bottom: 2px solid transparent;
+    transition: 0.3s ease;
+}
+
+.filter-tabs li.active a,
+.filter-tabs li a:hover {
+    color: #2C2C2C;
+    border-bottom-color: #2C2C2C;
+}
+
+.search-wrapper {
+    flex-shrink: 0;
+}
+
+.search-wrapper .search-form {
+    display: flex;
+    align-items: center;
+    gap: 0;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    overflow: hidden;
+    background: #fff;
+}
+
+.search-wrapper .search-form input[type="text"] {
+    border: none;
+    padding: 8px 15px;
+    font-size: 0.95rem;
+    min-width: 200px;
+    outline: none;
+    background: transparent;
+}
+
+.search-wrapper .search-form button {
+    background: none;
+    border: none;
+    padding: 8px 15px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0.6;
+    transition: 0.3s ease;
+}
+
+.search-wrapper .search-form button:hover {
+    opacity: 1;
+}
+
+.news-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 30px;
+    margin-bottom: 40px;
+}
+
+.news-card {
+    border: 1px solid #eee;
+    border-radius: 8px;
+    overflow: hidden;
+    background: #fff;
+    transition: box-shadow 0.3s ease;
+}
+
+.news-card:hover {
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+}
+
+.news-card img {
+    width: 100%;
+    height: 200px;
+    object-fit: cover;
+}
+
+.news-card-body {
+    padding: 20px;
+}
+
+.news-card-body .news-category {
+    font-size: 12px;
+    color: #2C2C2C;
+    font-weight: bold;
+    text-transform: uppercase;
+}
+
+.news-card-body h2 {
+    font-size: 18px;
+    margin: 10px 0;
+}
+
+.news-card-body h2 a {
+    text-decoration: none;
+    color: #333;
+}
+
+.news-card-body .read-more {
+    color: #2C2C2C;
+    text-decoration: none;
+    font-weight: bold;
+}
+
+.news-pagination {
+    text-align: center;
+    margin: 30px 0;
+}
+
+.news-pagination .page-numbers {
+    display: inline-block;
+    padding: 8px 16px;
+    margin: 0 4px;
+    border: 1px solid #ddd;
+    text-decoration: none;
+    color: #333;
+    border-radius: 4px;
+}
+
+.news-pagination .page-numbers.current {
+    background: #2C2C2C;
+    color: white;
+    border-color: #2C2C2C;
+}
+
+/* ========================================
+   SINGLE POST
+   ======================================== */
+.single-news .container {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+.single-news h1 {
+    font-size: 36px;
+    margin-bottom: 10px;
+}
+
+.single-news .post-meta {
+    color: #666;
+    margin-bottom: 20px;
+}
+
+.single-news .post-thumbnail img {
+    width: 100%;
+    height: auto;
+    border-radius: 8px;
+    margin: 20px 0;
+}
+
+.single-news .post-content {
+    font-size: 18px;
+    line-height: 1.8;
+}
+
+.related-posts {
+    margin-top: 50px;
+    border-top: 1px solid #ddd;
+    padding-top: 30px;
+}
+
+.related-posts h3 {
+    font-size: 28px;
+    margin-bottom: 20px;
+    font-weight: 300;
+    letter-spacing: 2px;
+}
+
+.related-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 20px;
+}
+
+.related-card {
+    border: 1px solid #eee;
+    border-radius: 8px;
+    overflow: hidden;
+    background: #fff;
+    transition: box-shadow 0.3s ease;
+}
+
+.related-card:hover {
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+}
+
+.related-card a {
+    text-decoration: none;
+    color: #333;
+}
+
+.related-card img {
+    width: 100%;
+    height: 150px;
+    object-fit: cover;
+}
+
+.related-card h4 {
+    padding: 10px 15px;
+    font-size: 14px;
+    margin: 0;
+    font-weight: 500;
+    text-align: center;
+}
+
+/* ========================================
+   SINGLE SECTION DETAIL
+   ======================================== */
+.single-section .container {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+.single-section h1 {
+    font-size: 36px;
+    margin-bottom: 20px;
+}
+
+.single-section .section-featured-image img {
+    width: 100%;
+    height: auto;
+    border-radius: 8px;
+    margin: 20px 0;
+}
+
+.single-section .section-content {
+    font-size: 18px;
+    line-height: 1.8;
+}
+
+.single-section .section-content p {
+    margin-bottom: 1.5em;
+}
+
+/* ========================================
+   SINGLE BANNER DETAIL
+   ======================================== */
+.single-banner .container {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+.single-banner h1 {
+    font-size: 36px;
+    margin-bottom: 10px;
+}
+
+.single-banner .banner-subtitle {
+    font-size: 18px;
+    color: #666;
+    margin-bottom: 20px;
+}
+
+.single-banner .banner-featured-image img {
+    width: 100%;
+    height: auto;
+    border-radius: 8px;
+    margin: 20px 0;
+}
+
+.single-banner .banner-content {
+    font-size: 18px;
+    line-height: 1.8;
+}
+
+/* ========================================
+   MOBILE RESPONSIVE
+   ======================================== */
+@media (max-width: 768px) {
+    .sections-grid-wrapper {
+        padding: 40px 15px !important;
+    }
+    .sections-grid .section-card .card-image img {
+        height: 200px !important;
+    }
+    .sections-grid .slick-prev,
+    .sections-grid .slick-next {
+        display: none !important;
+    }
+    .hero-slider .slick-prev {
+        left: 5px;
+    }
+    .hero-slider .slick-next {
+        right: 5px;
+    }
+    .hero-slider .slick-prev:before,
+    .hero-slider .slick-next:before {
+        font-size: 20px;
+    }
+    .hero-slide {
+        min-height: 50vh;
+    }
+    .hero-banner {
+        min-height: 50vh;
+    }
+    .hero-banner .container {
+        padding: 0 20px;
+    }
+    .hero-slide .container {
+        padding: 0 20px;
+    }
+    .news-filters {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 15px;
+    }
+    .filter-tabs {
+        justify-content: center;
+    }
+    .search-wrapper .search-form input[type="text"] {
+        min-width: auto;
+        width: 100%;
+    }
+    .news-grid {
+        grid-template-columns: 1fr;
+        gap: 20px;
+    }
+    .single-news h1 {
+        font-size: 28px;
+    }
+    .related-grid {
+        grid-template-columns: 1fr 1fr;
+    }
+    .ast-container,
+    #primary,
+    .site-content {
+        padding-left: 15px !important;
+        padding-right: 15px !important;
+    }
+}
+
+@media (max-width: 480px) {
+    .related-grid {
+        grid-template-columns: 1fr;
+    }
+    .filter-tabs {
+        gap: 8px 15px;
+    }
+    .filter-tabs li a {
+        font-size: 0.85rem;
+    }
+}
+
+/* ========================================
+   CONTACT FORM - ERROR MESSAGE   ======================================== */
+.contact-error {
+    background: #f8d7da;
+    color: #721c24;
+    padding: 15px 20px;
+    border-radius: 5px;
+    margin-bottom: 20px;
+    border: 1px solid #f5c6cb;
+}
+
+/* ========================================
+   LANGUAGE SWITCHER IN MENU
+   ======================================== */
+.menu-item-language {
+    margin-left: 15px;
+}
+
+.menu-item-language a {
+    padding: 5px 10px;
+    color: #2C2C2C;
+    text-decoration: none;
+    font-size: 14px;
+    font-weight: 400;
+    letter-spacing: 1px;
+    border-bottom: 2px solid transparent;
+    transition: 0.3s ease;
+}
+
+.menu-item-language a:hover {
+    border-bottom-color: #2C2C2C;
+}
+
+/* ========================================
+   HERO SLIDE - BOTTOM LEFT BUTTON
+   ======================================== */
+.hero-slide {
+    position: relative;
+    min-height: 60vh;
+    display: flex !important;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    background-size: cover !important;
+    background-position: center !important;
+}
+
+/* Content wrapper (centered) */
+.hero-content-wrapper {
+    position: relative;
+    z-index: 2;
+    width: 100%;
+}
+
+/* Bottom-Left Button */
+.hero-button-bottom-left {
+    position: absolute;
+    bottom: 80px;
+    left: 60px;
+    z-index: 10;
+}
+
+.hero-button-bottom-left .btn-primary {
+    display: inline-block;
+    background: #2C2C2C;
+    color: #fff;
+    padding: 12px 35px;
+    text-decoration: none;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    font-size: 14px;
+    font-weight: 600;
+    transition: 0.3s ease;
+    border: none;
+    cursor: pointer;
+}
+
+.hero-button-bottom-left .btn-primary:hover {
+    background: #000;
+}
+
+/* Slide link (clickable area) */
+.hero-slide-link {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 1;
+    text-decoration: none;
+}
+
+/* Mobile responsive */
+@media (max-width: 768px) {
+    .hero-button-bottom-left {
+        bottom: 40px;
+        left: 20px;
+    }
+    .hero-button-bottom-left .btn-primary {
+        padding: 10px 25px;
+        font-size: 12px;
+    }
+}
