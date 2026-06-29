@@ -1,6 +1,6 @@
 <?php
 /**
- * Single Section Template
+ * Single Car Template
  */
 
 get_header();
@@ -21,7 +21,7 @@ get_header();
                 </div>
             <?php endif; ?>
             
-            <div class="section-content">
+            <div class="section-car">
                 <?php the_content(); ?>
             </div>
             

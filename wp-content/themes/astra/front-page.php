@@ -8,7 +8,7 @@ get_header();
 
 <div class="custom-homepage">
     
-    <!-- ===== 1. HERO BANNER SLIDER ===== -->
+    <!-- ===== HERO BANNER SLIDER ===== -->
     <?php 
     $banners_query = new WP_Query(array(
         'post_type' => 'banner',
@@ -70,40 +70,36 @@ get_header();
         </section>
     <?php endif; ?>
 
-    <!-- ===== 3. SECTIONS SLIDER ===== -->
+    <!-- ===== CARS SLIDER ===== -->
     <?php 
-    $sections_query = new WP_Query(array(
-        'post_type' => 'section',
+    $cars_query = new WP_Query(array(
+        'post_type' => 'car',
         'posts_per_page' => -1,
         'orderby' => 'date',
         'order' => 'ASC',
     ));
 
-    if ($sections_query->have_posts()) : ?>
-    <section class="sections-grid-wrapper">
-        <div class="sections-grid">
-            <?php while ($sections_query->have_posts()) : $sections_query->the_post(); 
+    if ($cars_query->have_posts()) : ?>
+    <section class="cars-grid-wrapper">
+        <div class="cars-grid">
+            <?php while ($cars_query->have_posts()) : $cars_query->the_post(); 
                 $title = get_the_title();
                 $excerpt = get_the_excerpt();
-                
-                $content = get_the_content();
-                $image_url = '';
-                $patterns = array(
-                    '/<img.+src=[\'"]([^\'"]+)[\'"].*>/i',
-                    '/<figure.+?<img.+src=[\'"]([^\'"]+)[\'"].*>/i',
-                    '/<div.+?<img.+src=[\'"]([^\'"]+)[\'"].*>/i',
-                );
-                foreach ($patterns as $pattern) {
-                    preg_match($pattern, $content, $matches);
-                    if (!empty($matches[1])) {
-                        $image_url = $matches[1];
-                        break;
-                    }
-                }
-                
-                // Fallback to Featured Image if no image in content (backward compatibility)
+                $image_url = get_the_post_thumbnail_url(get_the_ID(), 'medium');
                 if (empty($image_url)) {
-                    $image_url = get_the_post_thumbnail_url(get_the_ID(), 'medium');
+                    $content = get_the_content();
+                    $patterns = array(
+                        '/<img.+src=[\'"]([^\'"]+)[\'"].*>/i',
+                        '/<figure.+?<img.+src=[\'"]([^\'"]+)[\'"].*>/i',
+                        '/<div.+?<img.+src=[\'"]([^\'"]+)[\'"].*>/i',
+                    );
+                    foreach ($patterns as $pattern) {
+                        preg_match($pattern, $content, $matches);
+                        if (!empty($matches[1])) {
+                            $image_url = $matches[1];
+                            break;
+                        }
+                    }
                 }
             ?>
                 <a href="<?php the_permalink(); ?>" class="section-card-link">
@@ -124,14 +120,14 @@ get_header();
     </section>
     <?php wp_reset_postdata(); ?>
     <?php else: ?>
-    <section class="sections-grid-wrapper">
-        <div class="sections-grid" style="text-align:center; padding:40px; background:#f9f9f9;">
-            <p>No sections added yet. Admin: Go to Sections → Add New to create some.</p>
+    <section class="cars-grid-wrapper">
+        <div class="cars-grid" style="text-align:center; padding:40px; background:#f9f9f9;">
+            <p>No cars added yet. Admin: Go to cars → Add New to create some.</p>
         </div>
     </section>
     <?php endif; ?>
 
-    <!-- ===== 4. NEWS SECTION ===== -->
+    <!-- ===== NEWS SECTION ===== -->
     <section class="news-section">
         <div class="container">
             <h2 class="section-title">Latest News</h2>

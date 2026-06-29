@@ -237,7 +237,6 @@ function enqueue_slick_slider() {
         
         wp_add_inline_script('slick-js', '
             jQuery(document).ready(function($) {
-                // ===== HERO BANNER SLIDER =====
                 $(".hero-slider").slick({
                     slidesToShow: 1,
                     slidesToScroll: 1,
@@ -252,8 +251,7 @@ function enqueue_slick_slider() {
                     pauseOnHover: true
                 });
 
-                // ===== SECTIONS GRID SLIDER =====
-                $(".sections-grid").slick({
+                $(".cars-grid").slick({
                     slidesToShow: 3,
                     slidesToScroll: 1,
                     arrows: true,
@@ -284,13 +282,13 @@ function enqueue_slick_slider() {
 add_action('wp_enqueue_scripts', 'enqueue_slick_slider');
 
 // ==================================================
-// REGISTER CUSTOM POST TYPE: SECTION
+// REGISTER CUSTOM POST TYPE: CAR
 // ==================================================
-function register_section_post_type() {
+function register_car_post_type() {
     $args = array(
         'public' => true,
         'has_archive' => true,
-        'rewrite' => array('slug' => 'sections'), 
+        'rewrite' => array('slug' => 'cars'), 
         'supports' => array(
             'title',
             'editor',      
@@ -298,20 +296,82 @@ function register_section_post_type() {
             'thumbnail',   
         ),
         'labels' => array(
-            'name' => 'Sections',
-            'singular_name' => 'Section',
-            'add_new' => 'Add New Section',
-            'add_new_item' => 'Add New Section',
-            'edit_item' => 'Edit Section',
-            'view_item' => 'View Section',
-            'search_items' => 'Search Sections',
-            'not_found' => 'No sections found',
-            'not_found_in_trash' => 'No sections found in Trash',
-        )
+            'name' => 'Cars',
+            'singular_name' => 'Car',
+            'add_new' => 'Add New Car',
+            'add_new_item' => 'Add New Car',
+            'edit_item' => 'Edit Car',
+            'view_item' => 'View Car',
+            'search_items' => 'Search Cars',
+            'not_found' => 'No cars found',
+            'not_found_in_trash' => 'No cars found in Trash',
+        ),
+        'menu_icon' => 'dashicons-car', // Bonus: adds a car icon in the admin
     );
-    register_post_type('section', $args);
+    register_post_type('car', $args);
 }
-add_action('init', 'register_section_post_type');
+add_action('init', 'register_car_post_type');
+
+// ================================================== 
+// REGISTER CUSTOM POST TYPE: TEAM
+// ==================================================
+function register_team_post_type() {
+    register_post_type('team', array(
+        'labels' => array(
+            'name'               => 'Team Members',
+            'singular_name'      => 'Team Member',
+            'add_new'            => 'Add New',
+            'add_new_item'       => 'Add New Team Member',
+            'edit_item'          => 'Edit Team Member',
+            'new_item'           => 'New Team Member',
+            'view_item'          => 'View Team Member',
+            'search_items'       => 'Search Team Members',
+            'not_found'          => 'No team members found',
+            'not_found_in_trash' => 'No team members found in Trash'
+        ),
+        'public'             => true,
+        'publicly_queryable' => false,
+        'show_ui'            => true,
+        'show_in_menu'       => true,
+        'query_var'          => false,
+        'rewrite'            => false,
+        'capability_type'    => 'post',
+        'has_archive'        => false,
+        'hierarchical'       => false,
+        'menu_position'      => 20,
+        'menu_icon'          => 'dashicons-groups',
+        'supports'           => array('title', 'thumbnail')
+    ));
+}
+add_action('init', 'register_team_post_type');
+
+// ==================================================
+// TEAM MEMBER CUSTOM FIELD
+// ==================================================
+function team_position_meta_box() {
+    add_meta_box(
+        'team_position',
+        'Position / Role',
+        'team_position_meta_box_callback',
+        'team',
+        'side',
+        'default'
+    );
+}
+add_action('add_meta_boxes', 'team_position_meta_box');
+
+function team_position_meta_box_callback($post) {
+    $value = get_post_meta($post->ID, '_team_position', true);
+    echo '<input type="text" id="team_position_field" name="team_position_field" value="' . esc_attr($value) . '" style="width:100%;" />';
+}
+
+function save_team_position_meta($post_id) {
+    if (defined('DOING_AUTOSAVE') && DOING_AUTOSAVE) return;
+    if (isset($_POST['team_position_field'])) {
+        update_post_meta($post_id, '_team_position', sanitize_text_field($_POST['team_position_field']));
+    }
+}
+add_action('save_post', 'save_team_position_meta');
 
 // ==================================================
 // REGISTER CUSTOM POST TYPE: BANNER
