@@ -2,26 +2,21 @@
 /**
  * Plugin Name: Custom Contact Form
  * Description: A custom contact form with file upload, email notification, admin view, edit, and status management.
- * Version: 2.1
- * Author: Your Name
+ * Version: 2.4
+ * Author: Long Nguyen
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
-// Load WordPress file upload functions
 require_once( ABSPATH . 'wp-admin/includes/file.php' );
 
-// Increase PHP limits
 @ini_set('upload_max_filesize', '10M');
 @ini_set('post_max_size', '10M');
 @ini_set('max_execution_time', 300);
 @ini_set('memory_limit', '128M');
 
-// ==================================================
-// ENQUEUE ADMIN CSS
-// ==================================================
 function ccf_enqueue_admin_assets($hook) {
     if ( strpos($hook, 'ccf-submissions') === false ) {
         return;
@@ -35,9 +30,6 @@ function ccf_enqueue_admin_assets($hook) {
 }
 add_action( 'admin_enqueue_scripts', 'ccf_enqueue_admin_assets' );
 
-// ==================================================
-// CREATE TABLE ON ACTIVATION
-// ==================================================
 function ccf_create_table() {
     global $wpdb;
     $table_name = $wpdb->prefix . 'contact_submissions';
@@ -59,9 +51,6 @@ function ccf_create_table() {
 }
 register_activation_hook( __FILE__, 'ccf_create_table' );
 
-// ==================================================
-// UPDATE TABLE FOR EXISTING INSTALLS
-// ==================================================
 function ccf_update_table() {
     global $wpdb;
     $table_name = $wpdb->prefix . 'contact_submissions';
@@ -72,38 +61,51 @@ function ccf_update_table() {
 }
 add_action('plugins_loaded', 'ccf_update_table');
 
-// ==================================================
-// SHORTCODE WITH SAME-PAGE PROCESSING
-// ==================================================
 function ccf_shortcode() {
     $success = false;
     $error = false;
     
     if ( $_SERVER['REQUEST_METHOD'] === 'POST' && isset( $_POST['ccf_nonce'] ) ) {
+        error_log('📩 Form submitted. Nonce present.');
+        
         if ( wp_verify_nonce( $_POST['ccf_nonce'], 'ccf_form_action' ) ) {
+            error_log('✅ Nonce verified.');
+            
             $name    = sanitize_text_field( $_POST['ccf_name'] );
             $email   = sanitize_email( $_POST['ccf_email'] );
             $message = sanitize_textarea_field( $_POST['ccf_message'] );
             
+            error_log('📝 Name: ' . $name);
+            error_log('📝 Email: ' . $email);
+            error_log('📝 Message length: ' . strlen($message));
+            
             if ( ! empty( $name ) && ! empty( $email ) && ! empty( $message ) ) {
+                error_log('Validation passed.');
+                
                 $file_url = '';
                 if ( ! empty( $_FILES['ccf_file']['name'] ) ) {
+                    error_log('📎 File uploaded: ' . $_FILES['ccf_file']['name']);
                     $allowed_types = array( 'image/jpeg', 'image/png', 'application/pdf', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' );
                     $file_type = wp_check_filetype( $_FILES['ccf_file']['name'] );
                     
                     if ( ! in_array( $file_type['type'], $allowed_types ) ) {
+                        error_log('File type not allowed: ' . $file_type['type']);
                         $error = true;
                     } else {
                         $upload = wp_handle_upload( $_FILES['ccf_file'], array( 'test_form' => false ) );
                         if ( ! isset( $upload['error'] ) ) {
                             $file_url = $upload['url'];
+                            error_log('File uploaded successfully: ' . $file_url);
                         } else {
+                            error_log('File upload error: ' . $upload['error']);
                             $error = true;
                         }
                     }
                 }
                 
                 if ( ! $error ) {
+                    error_log('No errors, proceeding to save and send email.');
+                    
                     global $wpdb;
                     $table_name = $wpdb->prefix . 'contact_submissions';
                     $wpdb->insert(
@@ -117,23 +119,60 @@ function ccf_shortcode() {
                         )
                     );
                     
-                    $to      = get_option( 'admin_email' );
-                    $subject = 'New Contact Form Submission from ' . $name;
-                    $body    = "You have a new message.\n\n";
-                    $body   .= "Name: $name\n";
-                    $body   .= "Email: $email\n\n";
-                    $body   .= "Message:\n$message\n\n";
-                    if ( $file_url ) {
-                        $body .= "File: $file_url\n";
+                    error_log('💾 Database insert done. Insert ID: ' . $wpdb->insert_id);
+                    
+                    $admin_users = get_users( array( 'role' => 'administrator' ) );
+                    $to = array();
+                    foreach ( $admin_users as $user ) {
+                        $to[] = $user->user_email;
                     }
-                    wp_mail( $to, $subject, $body, array( 'Reply-To: ' . $email ) );
+                    
+                    $subject = 'New Contact Form Submission from ' . $name;
+                    
+                    $headers = array(
+                        'From: Contact Form <noreply@' . $_SERVER['HTTP_HOST'] . '>',
+                        'Content-Type: text/html; charset=UTF-8',
+                        'Reply-To: ' . $email
+                    );
+                    
+                    $body = '<html><body style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background: #f9f9f9;">';
+                    $body .= '<div style="background: white; padding: 30px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.05);">';
+                    $body .= '<h2 style="color: #333; margin-top: 0; border-bottom: 2px solid #eee; padding-bottom: 15px;">📬 New Contact Form Submission</h2>';
+                    $body .= '<table style="width: 100%; border-collapse: collapse;">';
+                    $body .= '<tr><td style="padding: 10px 0; font-weight: bold; width: 100px;">Name:</td><td style="padding: 10px 0;">' . esc_html($name) . '</td></tr>';
+                    $body .= '<tr><td style="padding: 10px 0; font-weight: bold;">Email:</td><td style="padding: 10px 0;"><a href="mailto:' . esc_attr($email) . '">' . esc_html($email) . '</a></td></tr>';
+                    $body .= '<tr><td style="padding: 10px 0; font-weight: bold; vertical-align: top;">Message:</td><td style="padding: 10px 0;">' . nl2br(esc_html($message)) . '</td></tr>';
+                    if ( $file_url ) {
+                        $body .= '<tr><td style="padding: 10px 0; font-weight: bold;">File:</td><td style="padding: 10px 0;"><a href="' . esc_url($file_url) . '" target="_blank">📎 Download File</a></td></tr>';
+                    }
+                    $body .= '<tr><td style="padding: 10px 0; font-weight: bold;">Submitted:</td><td style="padding: 10px 0;">' . date('Y-m-d H:i:s') . '</td></tr>';
+                    $body .= '</table>';
+                    $body .= '<p style="margin-top: 30px; padding-top: 15px; border-top: 2px solid #eee; font-size: 12px; color: #999;">';
+                    $body .= 'This email was sent from your contact form. To manage submissions, go to the <a href="' . admin_url('admin.php?page=ccf-submissions') . '">Contact Submissions</a> page.';
+                    $body .= '</p>';
+                    $body .= '</div></body></html>';
+                    
+                    error_log('📧 About to send email to: ' . print_r($to, true));
+                    error_log('📧 Subject: ' . $subject);
+                    
+                    $mail_sent = wp_mail( $to, $subject, $body, $headers );
+                    
+                    if ( $mail_sent ) {
+                        error_log('wp_mail() returned TRUE - email sent successfully!');
+                    } else {
+                        error_log('wp_mail() returned FALSE - email failed!');
+                    }
                     
                     $success = true;
+                } else {
+                    error_log('File validation error prevented saving.');
                 }
             } else {
+                error_log('Validation failed: one or more required fields empty.');
                 $error = true;
             }
         } else {
+            error_log('Nonce verification failed.');
             $error = true;
         }
     }
@@ -185,25 +224,19 @@ function ccf_shortcode() {
 }
 add_shortcode( 'custom_contact_form', 'ccf_shortcode' );
 
-// ==================================================
-// ADMIN MENU
-// ==================================================
 function ccf_admin_menu() {
     add_menu_page(
-        'Contact Submissions',           
-        'Contact Submissions',           
-        'manage_options',                
-        'ccf-submissions',               
-        'ccf_admin_page',                
-        'dashicons-email',               
-        30                               
+        'Contact Submissions',
+        'Contact Submissions',
+        'manage_options',
+        'ccf-submissions',
+        'ccf_admin_page',
+        'dashicons-email',
+        30
     );
 }
 add_action( 'admin_menu', 'ccf_admin_menu' );
 
-// ==================================================
-// HANDLE BULK ACTIONS
-// ==================================================
 function ccf_handle_bulk_actions() {
     if ( ! isset( $_GET['page'] ) || $_GET['page'] !== 'ccf-submissions' ) {
         return;
@@ -244,120 +277,114 @@ function ccf_handle_bulk_actions() {
 }
 add_action( 'admin_init', 'ccf_handle_bulk_actions' );
 
-// ==================================================
-// HANDLE SINGLE SUBMISSION EDIT
-// ==================================================
 function ccf_handle_single_edit() {
+    if ( ! isset( $_POST['ccf_edit_submit'] ) || ! isset( $_POST['ccf_edit_nonce'] ) ) {
+        return;
+    }
+
     if ( ! isset( $_GET['page'] ) || $_GET['page'] !== 'ccf-submissions' ) {
         return;
     }
-    if ( ! isset( $_GET['action'] ) || $_GET['action'] !== 'edit' ) {
+    if ( ! isset( $_GET['id'] ) || ! current_user_can( 'manage_options' ) ) {
         return;
     }
-    if ( ! isset( $_GET['id'] ) ) {
-        return;
-    }
-    if ( ! current_user_can( 'manage_options' ) ) {
-        return;
-    }
-    if ( ! isset( $_GET['_wpnonce'] ) || ! wp_verify_nonce( $_GET['_wpnonce'], 'ccf_edit_submission' ) ) {
+    if ( ! wp_verify_nonce( $_POST['ccf_edit_nonce'], 'ccf_edit_submission' ) ) {
         wp_die( 'Security check failed.' );
     }
-    
+
     global $wpdb;
     $table_name = $wpdb->prefix . 'contact_submissions';
     $id = intval( $_GET['id'] );
-    
-    if ( isset( $_POST['ccf_edit_submit'] ) && isset( $_POST['ccf_edit_nonce'] ) && wp_verify_nonce( $_POST['ccf_edit_nonce'], 'ccf_edit_submission' ) ) {
-        $name    = sanitize_text_field( $_POST['ccf_name'] );
-        $email   = sanitize_email( $_POST['ccf_email'] );
-        $message = sanitize_textarea_field( $_POST['ccf_message'] );
-        $file_url = esc_url_raw( $_POST['ccf_file_url'] );
-        $status  = sanitize_text_field( $_POST['ccf_status'] );
-        
-        $wpdb->update(
-            $table_name,
-            array(
-                'name'     => $name,
-                'email'    => $email,
-                'message'  => $message,
-                'file_url' => $file_url,
-                'status'   => $status,
-            ),
-            array( 'id' => $id )
-        );
-        
-        wp_redirect( add_query_arg( 'updated', '1', remove_query_arg( array( 'action', 'id', '_wpnonce' ) ) ) );
-        exit;
-    }
-    
-    $row = $wpdb->get_row( $wpdb->prepare( "SELECT * FROM $table_name WHERE id = %d", $id ) );
-    if ( ! $row ) {
-        wp_die( 'Submission not found.' );
-    }
-    ?>
-    <div class="wrap">
-        <h1>Edit Submission #<?php echo esc_html( $row->id ); ?></h1>
-        <div class="ccf-edit-form">
-            <form method="post" action="">
-                <?php wp_nonce_field( 'ccf_edit_submission', 'ccf_edit_nonce' ); ?>
-                <table class="form-table">
-                    <tr>
-                        <th><label for="ccf_name">Full Name</label></th>
-                        <td><input type="text" id="ccf_name" name="ccf_name" value="<?php echo esc_attr( $row->name ); ?>" /></td>
-                    </tr>
-                    <tr>
-                        <th><label for="ccf_email">Email Address</label></th>
-                        <td><input type="email" id="ccf_email" name="ccf_email" value="<?php echo esc_attr( $row->email ); ?>" /></td>
-                    </tr>
-                    <tr>
-                        <th><label for="ccf_message">Message</label></th>
-                        <td><textarea id="ccf_message" name="ccf_message" rows="12"><?php echo esc_textarea( $row->message ); ?></textarea></td>
-                    </tr>
-                    <tr>
-                        <th><label for="ccf_file_url">File</label></th>
-                        <td>
-                            <?php if ( $row->file_url ) : 
-                                $ext = strtolower( pathinfo( $row->file_url, PATHINFO_EXTENSION ) );
-                                if ( in_array( $ext, array( 'jpg', 'jpeg', 'png', 'gif', 'webp', 'svg' ) ) ) : ?>
-                                    <div style="margin-bottom: 10px; background: #f8f8f8; padding: 10px; border: 1px solid #ddd; display: inline-block;">
-                                        <img src="<?php echo esc_url( $row->file_url ); ?>" style="max-width: 200px; max-height: 200px; display: block;" />
-                                    </div>
-                                <?php endif; ?>
-                            <?php endif; ?>
-                            <input type="url" id="ccf_file_url" name="ccf_file_url" value="<?php echo esc_attr( $row->file_url ); ?>" style="width: 100%; max-width: 600px;" />
-                            <p class="description">Enter a file URL or leave empty to remove.</p>
-                        </td>
-                    </tr>
-                    <tr>
-                        <th><label for="ccf_status">Status</label></th>
-                        <td>
-                            <select id="ccf_status" name="ccf_status">
-                                <option value="unread" <?php selected( $row->status, 'unread' ); ?>>Unread</option>
-                                <option value="read" <?php selected( $row->status, 'read' ); ?>>Read</option>
-                                <option value="reviewed" <?php selected( $row->status, 'reviewed' ); ?>>Reviewed</option>
-                                <option value="completed" <?php selected( $row->status, 'completed' ); ?>>Completed</option>
-                            </select>
-                        </td>
-                    </tr>
-                </table>
-                <input type="submit" name="ccf_edit_submit" value="Update Submission" class="button button-primary" />
-                <a href="<?php echo esc_url( remove_query_arg( array( 'action', 'id', '_wpnonce' ) ) ); ?>" class="button">Cancel</a>
-            </form>
-        </div>
-    </div>
-    <?php
+
+    $name    = sanitize_text_field( $_POST['ccf_name'] );
+    $email   = sanitize_email( $_POST['ccf_email'] );
+    $message = sanitize_textarea_field( $_POST['ccf_message'] );
+    $file_url = esc_url_raw( $_POST['ccf_file_url'] );
+    $status  = sanitize_text_field( $_POST['ccf_status'] );
+
+    $wpdb->update(
+        $table_name,
+        array(
+            'name'     => $name,
+            'email'    => $email,
+            'message'  => $message,
+            'file_url' => $file_url,
+            'status'   => $status,
+        ),
+        array( 'id' => $id )
+    );
+
+    wp_redirect( add_query_arg( 'updated', '1', remove_query_arg( array( 'action', 'id', '_wpnonce' ) ) ) );
     exit;
 }
 add_action( 'admin_init', 'ccf_handle_single_edit' );
 
-// ==================================================
-// RENDER ADMIN PAGE WITH PAGINATION
-// ==================================================
 function ccf_admin_page() {
     global $wpdb;
     $table_name = $wpdb->prefix . 'contact_submissions';
-    
+
+    if ( isset( $_GET['action'] ) && $_GET['action'] === 'edit' && isset( $_GET['id'] ) ) {
+        $id = intval( $_GET['id'] );
+        $row = $wpdb->get_row( $wpdb->prepare( "SELECT * FROM $table_name WHERE id = %d", $id ) );
+        if ( ! $row ) {
+            echo '<div class="wrap"><h1>Error</h1><p>Submission not found.</p></div>';
+            return;
+        }
+        ?>
+        <div class="wrap">
+            <h1>Edit Submission #<?php echo esc_html( $row->id ); ?></h1>
+            <div class="ccf-edit-form">
+                <form method="post" action="<?php echo esc_url( add_query_arg( array( 'action' => 'edit', 'id' => $row->id ) ) ); ?>">
+                    <?php wp_nonce_field( 'ccf_edit_submission', 'ccf_edit_nonce' ); ?>
+                    <table class="form-table">
+                        <tr>
+                            <th><label for="ccf_name">Full Name</label></th>
+                            <td><input type="text" id="ccf_name" name="ccf_name" value="<?php echo esc_attr( $row->name ); ?>" /></td>
+                        </tr>
+                        <tr>
+                            <th><label for="ccf_email">Email Address</label></th>
+                            <td><input type="email" id="ccf_email" name="ccf_email" value="<?php echo esc_attr( $row->email ); ?>" /></td>
+                        </tr>
+                        <tr>
+                            <th><label for="ccf_message">Message</label></th>
+                            <td><textarea id="ccf_message" name="ccf_message" rows="12"><?php echo esc_textarea( $row->message ); ?></textarea></td>
+                        </tr>
+                        <tr>
+                            <th><label for="ccf_file_url">File</label></th>
+                            <td>
+                                <?php if ( $row->file_url ) : 
+                                    $ext = strtolower( pathinfo( $row->file_url, PATHINFO_EXTENSION ) );
+                                    if ( in_array( $ext, array( 'jpg', 'jpeg', 'png', 'gif', 'webp', 'svg' ) ) ) : ?>
+                                        <div style="margin-bottom: 10px; background: #f8f8f8; padding: 10px; border: 1px solid #ddd; display: inline-block;">
+                                            <img src="<?php echo esc_url( $row->file_url ); ?>" style="max-width: 200px; max-height: 200px; display: block;" />
+                                        </div>
+                                    <?php endif; ?>
+                                <?php endif; ?>
+                                <input type="url" id="ccf_file_url" name="ccf_file_url" value="<?php echo esc_attr( $row->file_url ); ?>" style="width: 100%; max-width: 600px;" />
+                                <p class="description">Enter a file URL or leave empty to remove.</p>
+                            </td>
+                        </tr>
+                        <tr>
+                            <th><label for="ccf_status">Status</label></th>
+                            <td>
+                                <select id="ccf_status" name="ccf_status">
+                                    <option value="unread" <?php selected( $row->status, 'unread' ); ?>>Unread</option>
+                                    <option value="read" <?php selected( $row->status, 'read' ); ?>>Read</option>
+                                    <option value="reviewed" <?php selected( $row->status, 'reviewed' ); ?>>Reviewed</option>
+                                    <option value="completed" <?php selected( $row->status, 'completed' ); ?>>Completed</option>
+                                </select>
+                            </td>
+                        </tr>
+                    </table>
+                    <input type="submit" name="ccf_edit_submit" value="Update Submission" class="button button-primary" />
+                    <a href="<?php echo esc_url( remove_query_arg( array( 'action', 'id', '_wpnonce' ) ) ); ?>" class="button">Cancel</a>
+                </form>
+            </div>
+        </div>
+        <?php
+        return;
+    }
+
     $per_page = 20;
     $current_page = isset( $_GET['paged'] ) ? max( 1, intval( $_GET['paged'] ) ) : 1;
     $offset = ( $current_page - 1 ) * $per_page;

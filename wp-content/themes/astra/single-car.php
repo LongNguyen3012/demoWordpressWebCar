@@ -1,12 +1,8 @@
 <?php
-/**
- * Single Car Template
- */
-
 get_header();
 ?>
 
-<div class="single-section">
+<div class="single-car">
     <div class="container">
         
         <?php if (have_posts()) : while (have_posts()) : the_post(); ?>
@@ -16,12 +12,36 @@ get_header();
             <h1><?php the_title(); ?></h1>
             
             <?php if (has_post_thumbnail()) : ?>
-                <div class="section-featured-image">
+                <div class="car-featured-image">
                     <?php the_post_thumbnail('large'); ?>
                 </div>
             <?php endif; ?>
             
-            <div class="section-car">
+            <?php
+            $brands = get_the_terms(get_the_ID(), 'car_brand');
+            if ($brands && !is_wp_error($brands)) {
+                echo '<p><strong>Brand:</strong> ';
+                $brand_list = array();
+                foreach ($brands as $brand) {
+                    $brand_list[] = '<a href="' . get_term_link($brand) . '">' . esc_html($brand->name) . '</a>';
+                }
+                echo implode(', ', $brand_list);
+                echo '</p>';
+            }
+
+            $fuels = get_the_terms(get_the_ID(), 'car_fuel');
+            if ($fuels && !is_wp_error($fuels)) {
+                echo '<p><strong>Fuel:</strong> ';
+                $fuel_list = array();
+                foreach ($fuels as $fuel) {
+                    $fuel_list[] = '<a href="' . get_term_link($fuel) . '">' . esc_html($fuel->name) . '</a>';
+                }
+                echo implode(', ', $fuel_list);
+                echo '</p>';
+            }
+            ?>
+            
+            <div class="car-details">
                 <?php the_content(); ?>
             </div>
             

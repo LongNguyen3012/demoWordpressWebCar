@@ -101,6 +101,13 @@ get_header();
                         }
                     }
                 }
+                
+                // Get brand and fuel type
+                $brands = get_the_terms(get_the_ID(), 'car_brand');
+                $brand = $brands && !is_wp_error($brands) ? esc_html($brands[0]->name) : '';
+                
+                $fuels = get_the_terms(get_the_ID(), 'car_fuel');
+                $fuel = $fuels && !is_wp_error($fuels) ? esc_html($fuels[0]->name) : '';
             ?>
                 <a href="<?php the_permalink(); ?>" class="section-card-link">
                     <div class="section-card layout-medium">
@@ -112,6 +119,12 @@ get_header();
                         <div class="card-content">
                             <h3><?php echo esc_html($title); ?></h3>
                             <p><?php echo esc_html($excerpt); ?></p>
+                            <?php if ($brand) : ?>
+                                <p><strong>Brand:</strong> <?php echo $brand; ?></p>
+                            <?php endif; ?>
+                            <?php if ($fuel) : ?>
+                                <p><strong>Fuel:</strong> <?php echo $fuel; ?></p>
+                            <?php endif; ?>
                         </div>
                     </div>
                 </a>

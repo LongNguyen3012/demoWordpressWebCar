@@ -33,9 +33,6 @@ get_header();
                         $position = get_post_meta(get_the_ID(), '_team_position', true);
                         $thumb_id = get_post_thumbnail_id(get_the_ID());
                         $image    = $thumb_id ? wp_get_attachment_image_url($thumb_id, 'medium') : '';
-                        if (!$image) {
-                            $image = 'https://via.placeholder.com/150';
-                        }
                         ?>
                         <div class="team-member">
                             <img src="<?php echo esc_url($image); ?>" alt="<?php the_title_attribute(); ?>">
