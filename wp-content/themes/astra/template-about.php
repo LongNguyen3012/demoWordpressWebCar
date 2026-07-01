@@ -19,7 +19,7 @@ get_header();
 
     <section class="about-team">
         <div class="container">
-            <h2>Our Team</h2>
+            <h2><?php _te('team_title'); ?></h2>
             <div class="team-grid">
                 <?php
                 $team_query = new WP_Query(array(
@@ -42,7 +42,7 @@ get_header();
                     <?php endwhile;
                     wp_reset_postdata();
                 else : ?>
-                    <p>No team members yet. Add some via <strong>Team Members</strong> in the admin.</p>
+                    <p><?php _te('team_no_members', 'No team members yet. Add some via Team Members in the admin.'); ?></p>
                 <?php endif; ?>
             </div>
         </div>
