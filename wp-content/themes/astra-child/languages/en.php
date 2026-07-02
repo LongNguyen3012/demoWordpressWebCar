@@ -42,7 +42,7 @@ return [
 
     // News
     'news_title' => 'Latest News',
-    'news_read_more' => 'Read More',
+    'news_read_more' => 'Read More →',
     'news_no_posts' => 'No news articles found.',
     'news_filter_by' => 'Filter by category',
     'news_search' => 'Search news...',

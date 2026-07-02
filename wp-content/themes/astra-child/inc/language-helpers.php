@@ -54,16 +54,26 @@ function get_translated_field($post_id, $field, $lang = null, $fallback = true) 
         $lang = get_current_lang();
     }
     $default_lang = 'en';
+    
+    $field_map = array(
+        'title'   => 'post_title',
+        'content' => 'post_content',
+        'excerpt' => 'post_excerpt',
+    );
+    $real_field = isset($field_map[$field]) ? $field_map[$field] : $field;
+    
     if ($lang === $default_lang) {
-        return get_post_field($field, $post_id);
+        return get_post_field($real_field, $post_id);
     }
+    
     $meta_key = '_' . $field . '_' . $lang;
     $translation = get_post_meta($post_id, $meta_key, true);
     if (!empty($translation)) {
         return $translation;
     }
+    
     if ($fallback) {
-        return get_post_field($field, $post_id);
+        return get_post_field($real_field, $post_id);
     }
     return '';
 }
@@ -95,3 +105,4 @@ function get_translated_meta($post_id, $meta_key, $lang = null) {
     }
     return get_post_meta($post_id, $meta_key, true);
 }
+

@@ -20,7 +20,7 @@ return [
     'home_subtitle' => 'Xe thật tuyệt vời.',
     'home_intro' => 'Chào mừng đến với Autozone, nơi chúng tôi giúp bạn tìm chiếc xe hoàn hảo cho phong cách sống của bạn.',
     'back_to_home' => 'Quay lại trang chủ',
-    
+
     // Buttons
     'btn_learn_more' => 'Tìm hiểu thêm',
     'btn_view_all' => 'Xem tất cả tin tức',
@@ -42,7 +42,7 @@ return [
 
     // News
     'news_title' => 'Tin tức mới nhất',
-    'news_read_more' => 'Đọc thêm',
+    'news_read_more' => 'Đọc thêm →',
     'news_no_posts' => 'Không tìm thấy bài viết nào.',
     'news_filter_by' => 'Lọc theo danh mục',
     'news_search' => 'Tìm kiếm tin tức...',

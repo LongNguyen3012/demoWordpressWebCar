@@ -43,3 +43,10 @@ function astra_child_init_language() {
     }
     Language::get_instance();
 }
+
+add_action('template_include', function($template) {
+    if (is_home()) {
+        error_log('Blog archive template: ' . $template);
+    }
+    return $template;
+});

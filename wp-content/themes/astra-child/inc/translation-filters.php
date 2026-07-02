@@ -26,6 +26,28 @@ add_filter('the_posts_pagination_args', function($args) {
     return $args;
 });
 
+add_filter('the_title', 'translate_archive_post_titles', 10, 2);
+function translate_archive_post_titles($title, $post_id) {
+    if (is_home() && in_the_loop() && !is_admin()) {
+        $translated = get_translated_title($post_id);
+        if (!empty($translated)) {
+            return $translated;
+        }
+    }
+    return $title;
+}
+
+add_filter('get_the_excerpt', 'translate_archive_post_excerpts', 10, 2);
+function translate_archive_post_excerpts($excerpt, $post) {
+    if (is_home() && in_the_loop() && !is_admin()) {
+        $translated = get_translated_excerpt($post->ID);
+        if (!empty($translated)) {
+            return $translated;
+        }
+    }
+    return $excerpt;
+}
+
 add_action('wp', function() {
     if (!is_home()) return;
     ob_start(function($html) {
@@ -35,6 +57,7 @@ add_action('wp', function() {
         }
         $html = str_replace('All News', __t('All News', 'All News'), $html);
         $html = str_replace('All Categories', __t('All Categories', 'All Categories'), $html);
+        $html = str_replace('Read More →', __t('news_read_more', 'Read More →'), $html);
         $placeholder = __t('Search news...', 'Search news...');
         $html = preg_replace('/placeholder="[^"]*"/', 'placeholder="' . esc_attr($placeholder) . '"', $html);
         return $html;
