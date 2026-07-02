@@ -221,3 +221,42 @@ function save_language_select_meta_box($post_id) {
 }
 add_action('save_post', 'save_language_select_meta_box');
 
+function add_term_translation_meta_box() {
+    $taxonomies = array('category', 'post_tag', 'car_brand', 'car_fuel');
+    foreach ($taxonomies as $tax) {
+        add_action($tax . '_add_form_fields', 'render_term_translation_meta_fields');
+        add_action($tax . '_edit_form_fields', 'render_term_translation_meta_edit_fields');
+        add_action('created_' . $tax, 'save_term_translation_meta');
+        add_action('edited_' . $tax, 'save_term_translation_meta');
+    }
+}
+add_action('admin_init', 'add_term_translation_meta_box');
+
+function render_term_translation_meta_fields($taxonomy) {
+    ?>
+    <div class="form-field term-language-wrap">
+        <label for="term_name_vi">Vietnamese Name</label>
+        <input type="text" name="term_name_vi" id="term_name_vi" value="" />
+        <p class="description">Enter Vietnamese translation for this term.</p>
+    </div>
+    <?php
+}
+
+function render_term_translation_meta_edit_fields($term) {
+    $value = get_term_meta($term->term_id, '_term_name_vi', true);
+    ?>
+    <tr class="form-field term-language-wrap">
+        <th scope="row"><label for="term_name_vi">Vietnamese Name</label></th>
+        <td>
+            <input type="text" name="term_name_vi" id="term_name_vi" value="<?php echo esc_attr($value); ?>" />
+            <p class="description">Enter Vietnamese translation for this term.</p>
+        </td>
+    </tr>
+    <?php
+}
+
+function save_term_translation_meta($term_id) {
+    if (isset($_POST['term_name_vi'])) {
+        update_term_meta($term_id, '_term_name_vi', sanitize_text_field($_POST['term_name_vi']));
+    }
+}

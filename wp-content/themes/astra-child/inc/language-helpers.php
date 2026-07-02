@@ -106,3 +106,19 @@ function get_translated_meta($post_id, $meta_key, $lang = null) {
     return get_post_meta($post_id, $meta_key, true);
 }
 
+function get_translated_term_name($term_id, $lang = null) {
+    if (!$lang) {
+        $lang = get_current_lang();
+    }
+    $default_lang = 'en';
+    if ($lang === $default_lang) {
+        $term = get_term($term_id);
+        return $term ? $term->name : '';
+    }
+    $translation = get_term_meta($term_id, '_term_name_' . $lang, true);
+    if (!empty($translation)) {
+        return $translation;
+    }
+    $term = get_term($term_id);
+    return $term ? $term->name : '';
+}

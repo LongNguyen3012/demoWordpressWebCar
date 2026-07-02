@@ -92,10 +92,16 @@ get_header();
                 }
                 
                 $brands = get_the_terms(get_the_ID(), 'car_brand');
-                $brand = $brands && !is_wp_error($brands) ? esc_html($brands[0]->name) : '';
-                
+                $brand = '';
+                if ($brands && !is_wp_error($brands)) {
+                    $brand = esc_html(get_translated_term_name($brands[0]->term_id));
+                }
+
                 $fuels = get_the_terms(get_the_ID(), 'car_fuel');
-                $fuel = $fuels && !is_wp_error($fuels) ? esc_html($fuels[0]->name) : '';
+                $fuel = '';
+                if ($fuels && !is_wp_error($fuels)) {
+                    $fuel = esc_html(get_translated_term_name($fuels[0]->term_id));
+                }
             ?>
                 <a href="<?php the_permalink(); ?>" class="section-card-link">
                     <div class="section-card layout-medium">

@@ -6,15 +6,9 @@ get_header();
     <div class="container">
         
         <?php if (have_posts()) : while (have_posts()) : the_post(); ?>
-            
             <?php 
-            // DEBUG: Check what's being returned
             $debug_title = get_translated_title(get_the_ID());
             $debug_content = get_translated_content(get_the_ID());
-            if (empty($debug_content)) {
-                echo '<p style="color:red;">⚠️ Translated content is empty. Falling back to original.</p>';
-                $debug_content = get_the_content();
-            }
             ?>
             
             <h1><?php echo esc_html($debug_title ? $debug_title : get_the_title()); ?></h1>

@@ -23,7 +23,7 @@ get_header();
                 echo '<p><strong>' . __t('cars_brand', 'Brand') . ':</strong> ';
                 $brand_list = array();
                 foreach ($brands as $brand) {
-                    $brand_list[] = '<a href="' . get_term_link($brand) . '">' . esc_html($brand->name) . '</a>';
+                    $brand_list[] = '<a href="' . get_term_link($brand) . '">' . esc_html(get_translated_term_name($brand->term_id)) . '</a>';
                 }
                 echo implode(', ', $brand_list);
                 echo '</p>';
@@ -34,7 +34,7 @@ get_header();
                 echo '<p><strong>' . __t('cars_fuel', 'Fuel') . ':</strong> ';
                 $fuel_list = array();
                 foreach ($fuels as $fuel) {
-                    $fuel_list[] = '<a href="' . get_term_link($fuel) . '">' . esc_html($fuel->name) . '</a>';
+                    $fuel_list[] = '<a href="' . get_term_link($fuel) . '">' . esc_html(get_translated_term_name($fuel->term_id)) . '</a>';
                 }
                 echo implode(', ', $fuel_list);
                 echo '</p>';

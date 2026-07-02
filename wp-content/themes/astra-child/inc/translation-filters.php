@@ -86,3 +86,23 @@ function add_language_switcher_to_menu($nav_menu, $args) {
     $switcher .= '</ul></li>';
     return preg_replace('/<\/ul>/', $switcher . '</ul>', $nav_menu);
 }
+
+add_filter('get_terms', 'translate_term_names_in_get_terms', 10, 3);
+function translate_term_names_in_get_terms($terms, $taxonomies, $args) {
+    if (is_admin()) {
+        return $terms;
+    }
+    $lang = get_current_lang();
+    if ($lang === 'en') {
+        return $terms;
+    }
+    foreach ($terms as $term) {
+        if (is_object($term) && property_exists($term, 'term_id')) {
+            $translated = get_translated_term_name($term->term_id, $lang);
+            if (!empty($translated)) {
+                $term->name = $translated;
+            }
+        }
+    }
+    return $terms;
+}
