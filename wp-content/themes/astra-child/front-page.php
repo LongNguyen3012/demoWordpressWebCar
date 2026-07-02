@@ -1,14 +1,10 @@
 <?php
-/**
- * Front page template for car demo site
- */
 
 get_header();
 ?>
 
 <div class="custom-homepage">
     
-    <!-- ===== HERO BANNER SLIDER ===== -->
     <?php 
     $banners_query = new WP_Query(array(
         'post_type' => 'banner',
@@ -24,8 +20,8 @@ get_header();
                 $image_url = get_the_post_thumbnail_url(get_the_ID(), 'full');
                 $bg_style = $image_url ? 'background-image: url(' . esc_url($image_url) . ');' : 'background-color: #1a1a1a;';
                 
-                $button_text = get_post_meta(get_the_ID(), 'banner_button_text', true);
-                $button_url = get_post_meta(get_the_ID(), 'banner_button_url', true);
+                $button_text = get_translated_meta(get_the_ID(), 'banner_button_text');
+                $button_url = get_translated_meta(get_the_ID(), 'banner_button_url');
                 
                 if (empty($button_text)) {
                     $button_text = __t('btn_learn_more');
@@ -35,8 +31,8 @@ get_header();
                     
                     <div class="hero-content-wrapper">
                         <div class="container">
-                            <h1><?php the_title(); ?></h1>
-                            <p><?php echo get_the_excerpt(); ?></p>
+                            <h1><?php echo esc_html(get_translated_title(get_the_ID())); ?></h1>
+                            <p><?php echo esc_html(get_translated_excerpt(get_the_ID())); ?></p>
                         </div>
                     </div>
                     
@@ -63,7 +59,6 @@ get_header();
         </section>
     <?php endif; ?>
 
-    <!-- ===== CARS SLIDER ===== -->
     <?php 
     $cars_query = new WP_Query(array(
         'post_type' => 'car',
@@ -77,8 +72,8 @@ get_header();
         <h2 class="section-title" style="text-align:center;"><?php _te('cars_title'); ?></h2>
         <div class="cars-grid">
             <?php while ($cars_query->have_posts()) : $cars_query->the_post(); 
-                $title = get_the_title();
-                $excerpt = get_the_excerpt();
+                $title = get_translated_title(get_the_ID());
+                $excerpt = get_translated_excerpt(get_the_ID());
                 $image_url = get_the_post_thumbnail_url(get_the_ID(), 'medium');
                 if (empty($image_url)) {
                     $content = get_the_content();
@@ -133,7 +128,6 @@ get_header();
     </section>
     <?php endif; ?>
 
-    <!-- ===== NEWS SECTION ===== -->
     <section class="news-section">
         <div class="container">
             <h2 class="section-title"><?php _te('news_title'); ?></h2>
@@ -144,7 +138,7 @@ get_header();
                     while ($news_query->have_posts()) : $news_query->the_post(); ?>
                         <div class="news-item">
                             <a href="<?php the_permalink(); ?>">
-                                <span class="news-title"><?php the_title(); ?></span>
+                                <span class="news-title"><?php echo esc_html(get_translated_title(get_the_ID())); ?></span>
                                 <span class="news-date"><?php echo get_the_date(); ?></span>
                             </a>
                         </div>

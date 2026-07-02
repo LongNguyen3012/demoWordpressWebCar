@@ -1,7 +1,4 @@
 <?php
-/**
- * Template Name: About Us
- */
 get_header();
 ?>
 
@@ -11,7 +8,7 @@ get_header();
         <div class="container">
             <?php if (have_posts()) : while (have_posts()) : the_post(); ?>
                 <div class="entry-content">
-                    <?php the_content(); ?>
+                    <?php echo apply_filters('the_content', get_translated_content(get_the_ID())); ?>
                 </div>
             <?php endwhile; endif; ?>
         </div>
@@ -30,19 +27,19 @@ get_header();
                 ));
                 if ($team_query->have_posts()) :
                     while ($team_query->have_posts()) : $team_query->the_post();
-                        $position = get_post_meta(get_the_ID(), '_team_position', true);
+                        $position = get_translated_meta(get_the_ID(), '_team_position');
                         $thumb_id = get_post_thumbnail_id(get_the_ID());
                         $image    = $thumb_id ? wp_get_attachment_image_url($thumb_id, 'medium') : '';
                         ?>
                         <div class="team-member">
                             <img src="<?php echo esc_url($image); ?>" alt="<?php the_title_attribute(); ?>">
-                            <h3><?php the_title(); ?></h3>
+                            <h3><?php echo esc_html(get_translated_title(get_the_ID())); ?></h3>
                             <p><?php echo esc_html($position); ?></p>
                         </div>
                     <?php endwhile;
                     wp_reset_postdata();
                 else : ?>
-                    <p><?php _te('team_no_members', 'No team members yet. Add some via Team Members in the admin.'); ?></p>
+                    <p><?php _te('team_no_members'); ?></p>
                 <?php endif; ?>
             </div>
         </div>
@@ -50,4 +47,4 @@ get_header();
 
 </div>
 
-<?php get_footer(); ?>
+<?php get_footer();

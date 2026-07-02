@@ -44,3 +44,32 @@ function register_car_taxonomies() {
     ));
 }
 add_action('init', 'register_car_taxonomies');
+
+function register_language_taxonomy() {
+    $labels = array(
+        'name'              => 'Languages',
+        'singular_name'     => 'Language',
+        'search_items'      => 'Search Languages',
+        'all_items'         => 'All Languages',
+        'edit_item'         => 'Edit Language',
+        'update_item'       => 'Update Language',
+        'add_new_item'      => 'Add New Language',
+        'new_item_name'     => 'New Language Name',
+        'menu_name'         => 'Languages',
+    );
+
+    $args = array(
+        'labels'            => $labels,
+        'public'            => true,
+        'hierarchical'      => true,
+        'show_admin_column' => true,
+        'query_var'         => true,
+        'rewrite'           => array('slug' => 'language'),
+        'show_in_rest'      => true,
+    );
+
+    // Attach to ALL post types
+    $post_types = array('post', 'car', 'banner', 'team');
+    register_taxonomy('language', $post_types, $args);
+}
+add_action('init', 'register_language_taxonomy');

@@ -1,8 +1,4 @@
 <?php
-/**
- * Single Post Template
- */
-
 get_header();
 ?>
 
@@ -11,10 +7,20 @@ get_header();
         
         <?php if (have_posts()) : while (have_posts()) : the_post(); ?>
             
-            <h1><?php the_title(); ?></h1>
+            <?php 
+            // DEBUG: Check what's being returned
+            $debug_title = get_translated_title(get_the_ID());
+            $debug_content = get_translated_content(get_the_ID());
+            if (empty($debug_content)) {
+                echo '<p style="color:red;">⚠️ Translated content is empty. Falling back to original.</p>';
+                $debug_content = get_the_content();
+            }
+            ?>
+            
+            <h1><?php echo esc_html($debug_title ? $debug_title : get_the_title()); ?></h1>
             <div class="post-meta">
                 <span><?php echo get_the_date(); ?></span>
-                <span>| Categories: <?php echo get_the_category_list(', '); ?></span>
+                <span>| <?php _te('categories_label', 'Categories'); ?>: <?php echo get_the_category_list(', '); ?></span>
             </div>
             
             <?php if (has_post_thumbnail()) : ?>
@@ -24,7 +30,7 @@ get_header();
             <?php endif; ?>
             
             <div class="post-content">
-                <?php the_content(); ?>
+                <?php echo apply_filters('the_content', $debug_content); ?>
             </div>
             
             <?php
@@ -39,7 +45,7 @@ get_header();
                 $related_query = new WP_Query($related_args);
                 if ($related_query->have_posts()) : ?>
                     <div class="related-posts">
-                        <h3>Related News</h3>
+                        <h3><?php _te('related_posts', 'Related News'); ?></h3>
                         <div class="related-grid">
                             <?php while ($related_query->have_posts()) : $related_query->the_post(); ?>
                                 <div class="related-card">
@@ -47,7 +53,7 @@ get_header();
                                         <?php if (has_post_thumbnail()) : ?>
                                             <?php the_post_thumbnail('medium'); ?>
                                         <?php endif; ?>
-                                        <h4><?php the_title(); ?></h4>
+                                        <h4><?php echo esc_html(get_translated_title(get_the_ID())); ?></h4>
                                     </a>
                                 </div>
                             <?php endwhile; ?>

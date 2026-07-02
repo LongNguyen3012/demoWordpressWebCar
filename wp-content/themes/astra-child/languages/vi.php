@@ -19,7 +19,8 @@ return [
     'home_title' => 'Tìm Xe Mơ Ước Của Bạn',
     'home_subtitle' => 'Xe thật tuyệt vời.',
     'home_intro' => 'Chào mừng đến với Autozone, nơi chúng tôi giúp bạn tìm chiếc xe hoàn hảo cho phong cách sống của bạn.',
-
+    'back_to_home' => 'Quay lại trang chủ',
+    
     // Buttons
     'btn_learn_more' => 'Tìm hiểu thêm',
     'btn_view_all' => 'Xem tất cả tin tức',
@@ -50,6 +51,8 @@ return [
     'Search news...' => 'Tìm kiếm tin tức...',
     'Next →' => 'Tiếp →',
     '← Previous' => '← Trước',
+    'categories_label' => 'Danh mục',
+    'related_posts' => 'Tin tức liên quan',
 
     // Cars
     'cars_title' => 'Xe của chúng tôi',

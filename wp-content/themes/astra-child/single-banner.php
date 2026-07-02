@@ -1,8 +1,4 @@
 <?php
-/**
- * Single Banner Template
- */
-
 get_header();
 ?>
 
@@ -11,12 +7,12 @@ get_header();
         
         <?php if (have_posts()) : while (have_posts()) : the_post(); ?>
             
-            <p><a href="<?php echo home_url('/'); ?>">← Back to Home</a></p>
+            <p><a href="<?php echo home_url('/'); ?>">← <?php _te('back_to_home', 'Back to Home'); ?></a></p>
 
-            <h1><?php the_title(); ?></h1>
+            <h1><?php echo esc_html(get_translated_title(get_the_ID())); ?></h1>
             
             <?php if (has_excerpt()) : ?>
-                <p class="banner-subtitle"><?php echo get_the_excerpt(); ?></p>
+                <p class="banner-subtitle"><?php echo esc_html(get_translated_excerpt(get_the_ID())); ?></p>
             <?php endif; ?>
             
             <?php if (has_post_thumbnail()) : ?>
@@ -26,7 +22,7 @@ get_header();
             <?php endif; ?>
             
             <div class="banner-content">
-                <?php the_content(); ?>
+                <?php echo apply_filters('the_content', get_translated_content(get_the_ID())); ?>
             </div>
             
         <?php endwhile; endif; ?>

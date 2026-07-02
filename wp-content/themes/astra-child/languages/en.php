@@ -19,6 +19,7 @@ return [
     'home_title' => 'Find Your Dream Car',
     'home_subtitle' => 'Car is dope.',
     'home_intro' => 'Welcome to Autozone, where we help you find the perfect vehicle for your lifestyle.',
+    'back_to_home' => 'Back to Home',
 
     // Buttons
     'btn_learn_more' => 'Learn More',
@@ -50,6 +51,8 @@ return [
     'Search news...' => 'Search news...',
     'Next →' => 'Next →',
     '← Previous' => '← Previous',
+    'categories_label' => 'Categories',
+    'related_posts' => 'Related News',
 
     // Cars
     'cars_title' => 'Our Cars',
@@ -73,5 +76,7 @@ return [
 
     // Team no members warning
     'team_no_members' => 'No team members yet. Add some via Team Members in the admin.',
+
+
 
 ];

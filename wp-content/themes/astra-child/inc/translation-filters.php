@@ -1,33 +1,17 @@
 <?php
-/**
- * Translation Filters
- */
 
-// ============================================
-// MENU TRANSLATIONS
-// ============================================
 add_filter('nav_menu_item_title', 'translate_menu_item_title', 10, 4);
 function translate_menu_item_title($title, $item, $args, $depth) {
-    $lang = isset($_GET['lang']) ? $_GET['lang'] : 'en';
-    if ($lang === 'en') {
+    if ($item->ID === 'language-switcher' || $item->ID === 99999) {
+        $lang = Language::get_instance();
+        return esc_html($lang->get_language_name($lang->get_current_language()));
+    }
+    $current_lang = Language::get_instance()->get_current_language();
+    if ($current_lang === 'en') {
         return $title;
     }
     return __t($title, $title);
 }
-
-// ============================================
-// NEWS TRANSLATIONS
-// ============================================
-add_action('wp', function() {
-    if (is_home()) {
-        ob_start(function($html) {
-            $search = 'All News';
-            $replace = __t('All News', 'All News');
-            $html = str_replace($search, $replace, $html);
-            return $html;
-        });
-    }
-}, 1);
 
 add_filter('astra_default_strings', function($strings) {
     if (isset($strings['string-blog-no-posts'])) {
@@ -42,44 +26,40 @@ add_filter('the_posts_pagination_args', function($args) {
     return $args;
 });
 
-// ============================================
-// SEARCH PLACEHOLDER
-// ============================================
-add_filter('get_search_form', function($form) {
-    // Replace the placeholder text
-    $form = str_replace('Search news...', __t('Search news...', 'Search news...'), $form);
-    $form = str_replace('Search', __t('Search', 'Search'), $form);
-    return $form;
-});
-
-// ============================================
-// ALL CATEGORIES - OUTPUT BUFFER (FALLBACK)
-// ============================================
 add_action('wp', function() {
-    if (is_home() || is_archive()) {
-        ob_start(function($html) {
-            $search = 'All Categories';
-            $replace = __t('All Categories', 'All Categories');
-            return str_replace($search, $replace, $html);
-        });
-    }
+    if (!is_home()) return;
+    ob_start(function($html) {
+        $current_lang = Language::get_instance()->get_current_language();
+        if ($current_lang === 'en') {
+            return $html;
+        }
+        $html = str_replace('All News', __t('All News', 'All News'), $html);
+        $html = str_replace('All Categories', __t('All Categories', 'All Categories'), $html);
+        $placeholder = __t('Search news...', 'Search news...');
+        $html = preg_replace('/placeholder="[^"]*"/', 'placeholder="' . esc_attr($placeholder) . '"', $html);
+        return $html;
+    });
 }, 1);
 
-// ============================================
-// PRESERVE LANGUAGE IN ALL URLS
-// ============================================
-add_filter('the_permalink', function($url) {
-    $lang = isset($_GET['lang']) ? $_GET['lang'] : '';
-    if ($lang) {
-        $url = add_query_arg('lang', $lang, $url);
+add_filter('wp_nav_menu', 'add_language_switcher_to_menu', 10, 2);
+function add_language_switcher_to_menu($nav_menu, $args) {
+    if ($args->theme_location !== 'primary' && $args->menu_id !== 'ast-hf-menu-1') {
+        return $nav_menu;
     }
-    return $url;
-});
-
-add_filter('get_pagenum_link', function($url) {
-    $lang = isset($_GET['lang']) ? $_GET['lang'] : '';
-    if ($lang) {
-        $url = add_query_arg('lang', $lang, $url);
+    $lang = Language::get_instance();
+    $current_lang = $lang->get_current_language();
+    $available = $lang->get_available_languages();
+    if (count($available) <= 1) {
+        return $nav_menu;
     }
-    return $url;
-});
+    $switcher = '<li class="menu-item menu-item-language menu-item-has-children">';
+    $switcher .= '<a href="#" class="menu-link">' . esc_html($lang->get_language_name($current_lang)) . ' <span class="ast-icon icon-arrow">▼</span></a>';
+    $switcher .= '<ul class="sub-menu">';
+    foreach ($available as $code) {
+        if ($code === $current_lang) continue;
+        $url = add_query_arg('lang', $code, home_url($_SERVER['REQUEST_URI']));
+        $switcher .= '<li class="menu-item"><a href="' . esc_url($url) . '" class="menu-link">' . esc_html($lang->get_language_name($code)) . '</a></li>';
+    }
+    $switcher .= '</ul></li>';
+    return preg_replace('/<\/ul>/', $switcher . '</ul>', $nav_menu);
+}

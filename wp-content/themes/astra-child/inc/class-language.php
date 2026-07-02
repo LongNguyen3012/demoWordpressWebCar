@@ -5,7 +5,7 @@ class Language {
     private $current_lang = 'en';
     private $available_languages = ['en', 'vi'];
     private $translations = [];
-    private $language_names = [
+    public $language_names = [
         'en' => 'English',
         'vi' => 'Tiếng Việt'
     ];
@@ -26,6 +26,13 @@ class Language {
     private function detect_language() {
         if (isset($_GET['lang']) && in_array($_GET['lang'], $this->available_languages, true)) {
             $this->current_lang = $_GET['lang'];
+            $_SESSION['lang'] = $this->current_lang;
+            setcookie('lang', $this->current_lang, time() + 30 * DAY_IN_SECONDS, COOKIEPATH, COOKIE_DOMAIN);
+            return;
+        }
+
+        if (isset($_COOKIE['lang']) && in_array($_COOKIE['lang'], $this->available_languages, true)) {
+            $this->current_lang = $_COOKIE['lang'];
             $_SESSION['lang'] = $this->current_lang;
             return;
         }
