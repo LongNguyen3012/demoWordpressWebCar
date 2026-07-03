@@ -77,6 +77,21 @@ return [
     // Team no members warning
     'team_no_members' => 'No team members yet. Add some via Team Members in the admin.',
 
-
+    // // Login
+    // 'login_title' => 'Log In',
+    // 'login_username' => 'Username or Email',
+    // 'login_password' => 'Password',
+    // 'login_remember' => 'Remember Me',
+    // 'login_submit' => 'Log In',
+    // 'login_lost_password' => 'Lost your password?',
+    // 'login_register' => 'Register',
+    // 'login_logout' => 'Log Out',
+    // 'login_already_logged_in' => 'You are already logged in.',
+    // 'login_logged_out' => 'You have been logged out successfully.',
+    // 'login_error_empty' => 'Please fill in all fields.',
+    // 'login_error_invalid' => 'Invalid username or password.',
+    // 'login_error_blocked' => 'Your account has been blocked.',
+    // 'login_error_general' => 'Login failed. Please try again.',
+    // 'login_error_security' => 'Security check failed.',
 
 ];

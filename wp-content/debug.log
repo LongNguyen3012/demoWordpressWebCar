@@ -1,0 +1,18 @@
+[03-Jul-2026 06:22:15 UTC] Blog archive template: /var/www/html/wp-content/themes/astra/index.php
+[03-Jul-2026 06:45:26 UTC] PHP Warning:  require_once(/var/www/html/wp-content/themes/astra-child/inc/nav-menu-custom.php): Failed to open stream: No such file or directory in /var/www/html/wp-content/themes/astra-child/functions.php on line 35
+[03-Jul-2026 06:45:26 UTC] PHP Fatal error:  Uncaught Error: Failed opening required '/var/www/html/wp-content/themes/astra-child/inc/nav-menu-custom.php' (include_path='.:/usr/local/lib/php') in /var/www/html/wp-content/themes/astra-child/functions.php:35
+Stack trace:
+#0 /var/www/html/wp-settings.php(739): include()
+#1 /var/www/html/wp-config.php(147): require_once('/var/www/html/w...')
+#2 /var/www/html/wp-load.php(50): require_once('/var/www/html/w...')
+#3 /var/www/html/wp-admin/admin-ajax.php(22): require_once('/var/www/html/w...')
+#4 {main}
+  thrown in /var/www/html/wp-content/themes/astra-child/functions.php on line 35
+[03-Jul-2026 06:45:26 UTC] PHP Notice:  Function _load_textdomain_just_in_time was called <strong>incorrectly</strong>. Translation loading for the <code>astra-child</code> domain was triggered too early. This is usually an indicator for some code in the plugin or theme running too early. Translations should be loaded at the <code>init</code> action or later. Please see <a href="https://developer.wordpress.org/advanced-administration/debug/debug-wordpress/">Debugging in WordPress</a> for more information. (This message was added in version 6.7.0.) in /var/www/html/wp-includes/functions.php on line 6170
+[03-Jul-2026 06:45:26 UTC] PHP Notice:  Function _load_textdomain_just_in_time was called <strong>incorrectly</strong>. Translation loading for the <code>wp-mail-smtp</code> domain was triggered too early. This is usually an indicator for some code in the plugin or theme running too early. Translations should be loaded at the <code>init</code> action or later. Please see <a href="https://developer.wordpress.org/advanced-administration/debug/debug-wordpress/">Debugging in WordPress</a> for more information. (This message was added in version 6.7.0.) in /var/www/html/wp-includes/functions.php on line 6170
+[03-Jul-2026 06:47:46 UTC] Blog archive template: /var/www/html/wp-content/themes/astra/index.php
+[03-Jul-2026 07:14:24 UTC] Blog archive template: /var/www/html/wp-content/themes/astra/index.php
+[03-Jul-2026 09:13:24 UTC] PHP Parse error:  syntax error, unexpected token "{" in /var/www/html/wp-content/themes/astra-child/inc/frontend-enqueue.php on line 30
+[03-Jul-2026 09:15:25 UTC] PHP Parse error:  syntax error, unexpected token "{" in /var/www/html/wp-content/themes/astra-child/inc/frontend-enqueue.php on line 30
+[03-Jul-2026 09:16:26 UTC] PHP Parse error:  syntax error, unexpected token "{" in /var/www/html/wp-content/themes/astra-child/inc/frontend-enqueue.php on line 30
+[03-Jul-2026 09:18:27 UTC] PHP Parse error:  syntax error, unexpected token "{" in /var/www/html/wp-content/themes/astra-child/inc/frontend-enqueue.php on line 30

@@ -1,0 +1,73 @@
+<?php
+
+add_filter('wp_nav_menu_objects', 'add_cars_archive_menu_item', 10, 2);
+function add_cars_archive_menu_item($items, $args) {
+    if ($args->theme_location !== 'primary') {
+        return $items;
+    }
+
+    $car_archive_url = get_post_type_archive_link('car');
+    if (empty($car_archive_url)) {
+        return $items;
+    }
+
+    foreach ($items as $item) {
+        if ($item->url === $car_archive_url) {
+            return $items; 
+        }
+    }
+
+    $new_item = new stdClass();
+    $new_item->ID = 999999;                
+    $new_item->db_id = 0;
+    $new_item->title = __t('nav_cars', 'Cars'); 
+    $new_item->url = $car_archive_url;
+    $new_item->menu_order = 100;           
+    $new_item->menu_item_parent = 0;   
+    $new_item->type = 'custom';
+    $new_item->object = 'custom';
+    $new_item->object_id = 0;
+    $new_item->classes = array('menu-item', 'menu-item-type-custom');
+    $new_item->target = '';
+    $new_item->attr_title = '';
+    $new_item->description = '';
+    $new_item->xfn = '';
+    $new_item->current = false;
+
+    $position = 2;
+    array_splice($items, $position, 0, array($new_item));  
+
+    return $items;
+}
+
+add_filter('wp_nav_menu_items', 'add_language_switcher_items', 10, 2);
+function add_language_switcher_items($items, $args) {
+    if ($args->theme_location !== 'primary') {
+        return $items;
+    }
+
+    $lang = Language::get_instance();
+    $current_lang = $lang->get_current_language();
+    $available = $lang->get_available_languages();
+    $names = $lang->language_names;
+
+    if (count($available) <= 1) {
+        return $items;
+    }
+
+    $switcher = '<li class="menu-item menu-item-has-children language-switcher">';
+    $switcher .= '<a href="#" class="menu-link">' . esc_html($names[$current_lang]) . ' <span class="ast-icon icon-arrow">▼</span></a>';
+    $switcher .= '<ul class="sub-menu">';
+
+    foreach ($available as $code) {
+        if ($code === $current_lang) {
+            continue;
+        }
+        $url = add_query_arg('lang', $code, home_url($_SERVER['REQUEST_URI']));
+        $switcher .= '<li class="menu-item"><a href="' . esc_url($url) . '" class="menu-link">' . esc_html($names[$code]) . '</a></li>';
+    }
+
+    $switcher .= '</ul></li>';
+
+    return $items . $switcher;
+}

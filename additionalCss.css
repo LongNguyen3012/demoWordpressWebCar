@@ -1,25 +1,6 @@
-.ast-container,
-.site-content,
-.ast-row {
-    display: block !important;
-    width: 100% !important;
-    max-width: 100% !important;
-    margin: 0 auto !important;
-    padding: 0 20px !important;
-    box-sizing: border-box !important;
-    float: none !important;
-    clear: both !important;
-}
-#primary {
-    display: block !important;
-    width: 100% !important;
-    max-width: 1200px !important;
-    margin: 0 auto !important;
-    float: none !important;
-    clear: both !important;
-    padding: 0 20px !important;
-    box-sizing: border-box !important;
-}
+/* ===== CUSTOM STYLES (Astra-compatible) ===== */
+
+/* Keep body defaults */
 body {
     font-family: 'Inter', 'Roboto', sans-serif;
     color: #2C2C2C;
@@ -28,20 +9,31 @@ body {
     margin: 0;
     padding: 0;
 }
+
+/* Custom container (used only for your custom sections, not Astra's .ast-container) */
 .container {
     max-width: 1200px;
     margin: 0 auto;
     padding: 0 20px;
 }
+
+/* Main content area – only constrain width & padding, don't break flex */
+#primary {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 20px;
+    box-sizing: border-box;
+}
+
+/* ----- HERO SLIDER ----- */
 .hero-slider {
     width: 100%;
     overflow: visible;
     position: relative;
 }
 .hero-slide .container {
-    padding: 40px 60px; 
+    padding: 40px 60px;
 }
-
 .hero-slide {
     min-height: 60vh;
     display: flex !important;
@@ -129,6 +121,40 @@ body {
     opacity: 1;
     font-weight: 300;
 }
+.hero-button-bottom-left {
+    position: absolute;
+    bottom: 80px;
+    left: 60px;
+    z-index: 10;
+}
+.hero-button-bottom-left .btn-primary {
+    display: inline-block;
+    background: #2C2C2C;
+    color: #fff;
+    padding: 12px 35px;
+    text-decoration: none;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    font-size: 14px;
+    font-weight: 600;
+    transition: 0.3s ease;
+    border: none;
+    cursor: pointer;
+}
+.hero-button-bottom-left .btn-primary:hover {
+    background: #000;
+}
+.hero-slide-link {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 1;
+    text-decoration: none;
+}
+
+/* Hero banner fallback */
 .hero-banner {
     min-height: 60vh;
     display: flex;
@@ -193,27 +219,8 @@ body {
 .hero-banner .btn-primary:hover {
     background: #000;
 }
-.intro-section {
-    padding: 80px 0 40px 0;
-    text-align: center;
-}
-.intro-section .container {
-    max-width: 800px;
-}
-.section-title {
-    font-size: 2.5rem;
-    font-weight: 300;
-    letter-spacing: 4px;
-    margin-bottom: 20px;
-    text-transform: uppercase;
-}
-.intro-text {
-    font-size: 1.1rem;
-    line-height: 2;
-    color: #666;
-    max-width: 800px;
-    margin: 0 auto;
-}
+
+/* ----- CARS GRID (Slick slider) ----- */
 .cars-grid-wrapper {
     width: 100% !important;
     padding: 60px 30px !important;
@@ -321,6 +328,8 @@ body {
     width: 100%;
     height: 100%;
 }
+
+/* ----- NEWS SECTION (homepage) ----- */
 .news-section {
     padding: 60px 0;
     background: #fff;
@@ -355,6 +364,8 @@ body {
     font-size: 0.9rem;
     font-weight: 300;
 }
+
+/* ----- NEWS ARCHIVE (blog page) ----- */
 .news-archive {
     width: 100% !important;
     clear: both !important;
@@ -499,6 +510,8 @@ body {
     color: white;
     border-color: #2C2C2C;
 }
+
+/* ----- SINGLE POSTS ----- */
 .single-news .container {
     max-width: 800px;
     margin: 0 auto;
@@ -564,6 +577,8 @@ body {
     font-weight: 500;
     text-align: center;
 }
+
+/* ----- SINGLE CAR ----- */
 .single-car .container {
     max-width: 800px;
     margin: 0 auto;
@@ -586,6 +601,8 @@ body {
 .single-car .car-content p {
     margin-bottom: 1.5em;
 }
+
+/* ----- SINGLE BANNER ----- */
 .single-banner .container {
     max-width: 800px;
     margin: 0 auto;
@@ -610,161 +627,8 @@ body {
     font-size: 18px;
     line-height: 1.8;
 }
-@media (max-width: 768px) {
-    .cars-grid-wrapper {
-        padding: 40px 15px !important;
-    }
-    .cars-grid .car-card .card-image img {
-        height: 180px !important;
-    }
-    .cars-grid .slick-prev,
-    .cars-grid .slick-next {
-        display: none !important;
-    }
-    .hero-slider .slick-prev {
-        left: 5px;
-    }
-    .hero-slider .slick-next {
-        right: 5px;
-    }
-    .hero-slider .slick-prev:before,
-    .hero-slider .slick-next:before {
-        font-size: 20px;
-    }
-    .hero-slide {
-        min-height: 50vh;
-    }
-    .hero-banner {
-        min-height: 50vh;
-    }
-    .hero-banner .container {
-        padding: 0 20px;
-    }
-    .hero-slide .container {
-        padding: 0 20px;
-    }
-    .news-filters {
-        flex-direction: column;
-        align-items: stretch;
-        gap: 15px;
-    }
-    .filter-tabs {
-        justify-content: center;
-    }
-    .search-wrapper .search-form input[type="text"] {
-        min-width: auto;
-        width: 100%;
-    }
-    .news-grid {
-        grid-template-columns: 1fr;
-        gap: 20px;
-    }
-    .single-news h1 {
-        font-size: 28px;
-    }
-    .related-grid {
-        grid-template-columns: 1fr 1fr;
-    }
-    .ast-container,
-    #primary,
-    .site-content {
-        padding-left: 15px !important;
-        padding-right: 15px !important;
-    }
-}
-@media (max-width: 480px) {
-    .related-grid {
-        grid-template-columns: 1fr;
-    }
-    .filter-tabs {
-        gap: 8px 15px;
-    }
-    .filter-tabs li a {
-        font-size: 0.85rem;
-    }
-}
-.contact-error {
-    background: #f8d7da;
-    color: #721c24;
-    padding: 15px 20px;
-    border-radius: 5px;
-    margin-bottom: 20px;
-    border: 1px solid #f5c6cb;
-}
-.menu-item-language {
-    margin-left: 15px;
-}
-.menu-item-language a {
-    padding: 5px 10px;
-    color: #2C2C2C;
-    text-decoration: none;
-    font-size: 14px;
-    font-weight: 400;
-    letter-spacing: 1px;
-    border-bottom: 2px solid transparent;
-    transition: 0.3s ease;
-}
-.menu-item-language a:hover {
-    border-bottom-color: #2C2C2C;
-}
-.hero-slide {
-    position: relative;
-    min-height: 60vh;
-    display: flex !important;
-    align-items: center;
-    justify-content: center;
-    text-align: center;
-    background-size: cover !important;
-    background-position: center !important;
-}
-.hero-content-wrapper {
-    position: relative;
-    z-index: 2;
-    width: 100%;
-}
-.hero-button-bottom-left {
-    position: absolute;
-    bottom: 80px;
-    left: 60px;
-    z-index: 10;
-}
-.hero-button-bottom-left .btn-primary {
-    display: inline-block;
-    background: #2C2C2C;
-    color: #fff;
-    padding: 12px 35px;
-    text-decoration: none;
-    text-transform: uppercase;
-    letter-spacing: 2px;
-    font-size: 14px;
-    font-weight: 600;
-    transition: 0.3s ease;
-    border: none;
-    cursor: pointer;
-}
-.hero-button-bottom-left .btn-primary:hover {
-    background: #000;
-}
-.hero-slide-link {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    z-index: 1;
-    text-decoration: none;
-}
-@media (max-width: 768px) {
-    .hero-button-bottom-left {
-        bottom: 40px;
-        left: 20px;
-    }
-    .hero-button-bottom-left .btn-primary {
-        padding: 10px 25px;
-        font-size: 12px;
-    }
-}
 
+/* ----- ABOUT PAGE ----- */
 .about-hero {
     padding: 60px 0;
     background: #2C2C2C;
@@ -780,7 +644,6 @@ body {
     font-size: 1.2rem;
     opacity: 0.8;
 }
-
 .about-content {
     padding: 60px 0;
     max-width: 800px;
@@ -788,7 +651,6 @@ body {
     font-size: 1.1rem;
     line-height: 1.8;
 }
-
 .about-team {
     padding: 60px 0;
     background: #f9f9f9;
@@ -819,4 +681,123 @@ body {
 }
 .team-member p {
     color: #666;
+}
+
+/* ----- LANGUAGE SWITCHER (inline in menu) ----- */
+.language-switcher {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-family: inherit;
+    font-size: 0.9rem;
+}
+.language-switcher a {
+    text-decoration: none;
+    color: #2C2C2C;
+    padding: 0 8px;
+    transition: color 0.2s ease;
+}
+.language-switcher a:hover {
+    color: #000;
+}
+.language-switcher a.active {
+    font-weight: bold;
+    color: #2C2C2C;
+}
+@media (min-width: 922px) {
+    .language-switcher {
+        margin-left: 20px;
+        padding-left: 20px;
+        border-left: 1px solid #e0e0e0;
+    }
+}
+@media (max-width: 921px) {
+    .language-switcher {
+        margin-top: 10px;
+        padding-top: 10px;
+        border-top: 1px solid #e0e0e0;
+        justify-content: center;
+    }
+}
+
+/* ----- RESPONSIVE TWEAKS ----- */
+@media (max-width: 768px) {
+    .cars-grid-wrapper {
+        padding: 40px 15px !important;
+    }
+    .cars-grid .car-card .card-image img {
+        height: 180px !important;
+    }
+    .cars-grid .slick-prev,
+    .cars-grid .slick-next {
+        display: none !important;
+    }
+    .hero-slider .slick-prev {
+        left: 5px;
+    }
+    .hero-slider .slick-next {
+        right: 5px;
+    }
+    .hero-slider .slick-prev:before,
+    .hero-slider .slick-next:before {
+        font-size: 20px;
+    }
+    .hero-slide {
+        min-height: 50vh;
+    }
+    .hero-banner {
+        min-height: 50vh;
+    }
+    .hero-banner .container,
+    .hero-slide .container {
+        padding: 0 20px;
+    }
+    .news-filters {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 15px;
+    }
+    .filter-tabs {
+        justify-content: center;
+    }
+    .search-wrapper .search-form input[type="text"] {
+        min-width: auto;
+        width: 100%;
+    }
+    .news-grid {
+        grid-template-columns: 1fr;
+        gap: 20px;
+    }
+    .single-news h1 {
+        font-size: 28px;
+    }
+    .related-grid {
+        grid-template-columns: 1fr 1fr;
+    }
+    /* Ensure padding for mobile */
+    .ast-container,
+    #primary,
+    .site-content {
+        padding-left: 15px !important;
+        padding-right: 15px !important;
+    }
+    .hero-button-bottom-left {
+        bottom: 40px;
+        left: 20px;
+    }
+    .hero-button-bottom-left .btn-primary {
+        padding: 10px 25px;
+        font-size: 12px;
+    }
+}
+@media (max-width: 480px) {
+    .related-grid {
+        grid-template-columns: 1fr;
+    }
+    .filter-tabs {
+        gap: 8px 15px;
+    }
+    .filter-tabs li a {
+        font-size: 0.85rem;
+    }
 }

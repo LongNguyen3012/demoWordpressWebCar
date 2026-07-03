@@ -64,29 +64,6 @@ add_action('wp', function() {
     });
 }, 1);
 
-add_filter('wp_nav_menu', 'add_language_switcher_to_menu', 10, 2);
-function add_language_switcher_to_menu($nav_menu, $args) {
-    if ($args->theme_location !== 'primary' && $args->menu_id !== 'ast-hf-menu-1') {
-        return $nav_menu;
-    }
-    $lang = Language::get_instance();
-    $current_lang = $lang->get_current_language();
-    $available = $lang->get_available_languages();
-    if (count($available) <= 1) {
-        return $nav_menu;
-    }
-    $switcher = '<li class="menu-item menu-item-language menu-item-has-children">';
-    $switcher .= '<a href="#" class="menu-link">' . esc_html($lang->get_language_name($current_lang)) . ' <span class="ast-icon icon-arrow">▼</span></a>';
-    $switcher .= '<ul class="sub-menu">';
-    foreach ($available as $code) {
-        if ($code === $current_lang) continue;
-        $url = add_query_arg('lang', $code, home_url($_SERVER['REQUEST_URI']));
-        $switcher .= '<li class="menu-item"><a href="' . esc_url($url) . '" class="menu-link">' . esc_html($lang->get_language_name($code)) . '</a></li>';
-    }
-    $switcher .= '</ul></li>';
-    return preg_replace('/<\/ul>/', $switcher . '</ul>', $nav_menu);
-}
-
 add_filter('get_terms', 'translate_term_names_in_get_terms', 10, 3);
 function translate_term_names_in_get_terms($terms, $taxonomies, $args) {
     if (is_admin()) {

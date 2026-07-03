@@ -36,6 +36,8 @@ require_once ASTRA_CHILD_INC_DIR . 'class-language.php';
 require_once ASTRA_CHILD_INC_DIR . 'language-helpers.php';
 require_once ASTRA_CHILD_INC_DIR . 'translation-filters.php';
 
+require_once ASTRA_CHILD_INC_DIR . 'nav-menu-custom.php';
+
 add_action( 'init', 'astra_child_init_language' );
 function astra_child_init_language() {
     if ( session_status() === PHP_SESSION_NONE ) {
@@ -50,3 +52,4 @@ add_action('template_include', function($template) {
     }
     return $template;
 });
+

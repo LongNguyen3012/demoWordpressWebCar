@@ -76,4 +76,21 @@ return [
     // Team no members warning
     'team_no_members' => 'Chưa có thành viên nào. Thêm thành viên qua quản trị viên.',
 
+    // // Login
+    // 'login_title' => 'Đăng nhập',
+    // 'login_username' => 'Tên đăng nhập hoặc Email',
+    // 'login_password' => 'Mật khẩu',
+    // 'login_remember' => 'Ghi nhớ tôi',
+    // 'login_submit' => 'Đăng nhập',
+    // 'login_lost_password' => 'Quên mật khẩu?',
+    // 'login_register' => 'Đăng ký',
+    // 'login_logout' => 'Đăng xuất',
+    // 'login_already_logged_in' => 'Bạn đã đăng nhập.',
+    // 'login_logged_out' => 'Bạn đã đăng xuất thành công.',
+    // 'login_error_empty' => 'Vui lòng điền tất cả các trường.',
+    // 'login_error_invalid' => 'Tên đăng nhập hoặc mật khẩu không đúng.',
+    // 'login_error_blocked' => 'Tài khoản của bạn đã bị khóa.',
+    // 'login_error_general' => 'Đăng nhập thất bại. Vui lòng thử lại.',
+    // 'login_error_security' => 'Xác thực bảo mật thất bại.',
+
 ];

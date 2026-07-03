@@ -1,5 +1,4 @@
 <?php
-
 get_header();
 ?>
 
@@ -14,7 +13,7 @@ get_header();
     ));
 
     if ($banners_query->have_posts()) : ?>
-        <div class="hero-slider">
+        <div class="hero-slider" style="width: 100vw; max-width: 100vw; overflow: hidden;">
             <?php while ($banners_query->have_posts()) : $banners_query->the_post(); 
                 
                 $image_url = get_the_post_thumbnail_url(get_the_ID(), 'full');
@@ -27,7 +26,7 @@ get_header();
                     $button_text = __t('btn_learn_more');
                 }
             ?>
-                <div class="hero-slide" style="<?php echo $bg_style; ?> background-size: cover; background-position: center;">
+                <div class="hero-slide" style="<?php echo $bg_style; ?> background-size: contain; background-position: center; background-repeat: no-repeat; background-color: #1a1a1a; min-height: 60vh; display: flex; align-items: center; justify-content: center; text-align: center; width: 100%; max-width: 100%;">
                     
                     <div class="hero-content-wrapper">
                         <div class="container">
