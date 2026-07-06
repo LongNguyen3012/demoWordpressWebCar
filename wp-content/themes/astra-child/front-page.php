@@ -13,40 +13,33 @@ get_header();
     ));
 
     if ($banners_query->have_posts()) : ?>
-        <div class="hero-slider" style="width: 100vw; max-width: 100vw; overflow: hidden;">
-            <?php while ($banners_query->have_posts()) : $banners_query->the_post(); 
-                
-                $image_url = get_the_post_thumbnail_url(get_the_ID(), 'full');
-                $bg_style = $image_url ? 'background-image: url(' . esc_url($image_url) . ');' : 'background-color: #1a1a1a;';
-                
-                $button_text = get_translated_meta(get_the_ID(), 'banner_button_text');
-                $button_url = get_translated_meta(get_the_ID(), 'banner_button_url');
-                
-                if (empty($button_text)) {
-                    $button_text = __t('btn_learn_more');
-                }
-            ?>
-                <div class="hero-slide" style="<?php echo $bg_style; ?> background-size: contain; background-position: center; background-repeat: no-repeat; background-color: #1a1a1a; min-height: 60vh; display: flex; align-items: center; justify-content: center; text-align: center; width: 100%; max-width: 100%;">
-                    
-                    <div class="hero-content-wrapper">
-                        <div class="container">
-                            <h1><?php echo esc_html(get_translated_title(get_the_ID())); ?></h1>
-                            <p><?php echo esc_html(get_translated_excerpt(get_the_ID())); ?></p>
+        <div class="hero-slider-wrapper">
+            <div class="hero-slider">
+                <?php while ($banners_query->have_posts()) : $banners_query->the_post(); 
+                    $image_url = get_the_post_thumbnail_url(get_the_ID(), 'full');
+                    $bg_style = $image_url ? 'background-image: url(' . esc_url($image_url) . ');' : 'background-color: #1a1a1a;';
+                    $button_text = get_translated_meta(get_the_ID(), 'banner_button_text');
+                    $button_url = get_translated_meta(get_the_ID(), 'banner_button_url');
+                    if (empty($button_text)) $button_text = __t('btn_learn_more');
+                    $permalink = get_permalink();
+                ?>
+                    <div class="hero-slide" style="<?php echo $bg_style; ?> background-size: contain; background-position: center; background-repeat: no-repeat; background-color: #1a1a1a;">
+                        <a href="<?php echo esc_url($permalink); ?>" class="hero-slide-link"></a>
+                        <div class="hero-content-wrapper">
+                            <div class="container">
+                                <h1><?php echo esc_html(get_translated_title(get_the_ID())); ?></h1>
+                                <p><?php echo esc_html(get_translated_excerpt(get_the_ID())); ?></p>
+                                <?php if (!empty($button_url)) : ?>
+                                    <a href="<?php echo esc_url($button_url); ?>" class="btn-primary"><?php echo esc_html($button_text); ?></a>
+                                <?php endif; ?>
+                            </div>
                         </div>
                     </div>
-                    
-                    <?php if (!empty($button_url)) : ?>
-                        <div class="hero-button-bottom-left">
-                            <a href="<?php echo esc_url($button_url); ?>" class="btn-primary">
-                                <?php echo esc_html($button_text); ?>
-                            </a>
-                        </div>
-                    <?php endif; ?>
-                    
-                    <a href="<?php the_permalink(); ?>" class="hero-slide-link"></a>
-                    
-                </div>
-            <?php endwhile; ?>
+                <?php endwhile; ?>
+            </div>
+            <button class="hero-prev">‹</button>
+            <button class="hero-next">›</button>
+            <div class="hero-dots"></div>
         </div>
         <?php wp_reset_postdata(); ?>
     <?php else: ?>
