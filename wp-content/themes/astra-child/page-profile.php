@@ -19,22 +19,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['profile_update'])) {
     if (!wp_verify_nonce($_POST['profile_nonce'], 'profile_update_action')) {
         $error = __t('profile_nonce_error', 'Security check failed.');
     } else {
-        $new_username = sanitize_user($_POST['username']);
         $new_email = sanitize_email($_POST['email']);
+        $new_display_name = sanitize_text_field($_POST['display_name']);
 
-        if ($new_username !== $user->user_login && username_exists($new_username)) {
-            $error .= '<br>' . __t('profile_username_taken', 'Username already taken.');
-        }
+        $errors = array();
 
         if ($new_email !== $user->user_email && email_exists($new_email)) {
-            $error .= '<br>' . __t('profile_email_taken', 'Email already registered.');
+            $errors[] = __t('profile_email_taken', 'Email already registered.');
         }
 
-        if (empty($error)) {
+        if (empty($errors)) {
             $update_data = array('ID' => $user_id);
-            if ($new_username !== $user->user_login) {
-                $update_data['user_login'] = $new_username;
-            }
+
             if ($new_email !== $user->user_email) {
                 $update_data['user_email'] = $new_email;
                 update_user_meta($user_id, 'email_verified', '0');
@@ -42,17 +38,27 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['profile_update'])) {
                 $success = __t('profile_email_changed_verify', 'Email updated. A new verification code has been sent to your new email.');
             }
 
-            if (!empty($update_data) && $update_data !== array('ID' => $user_id)) {
+
+            if ($new_display_name !== $user->display_name) {
+                $update_data['display_name'] = $new_display_name;
+            }
+
+            if (count($update_data) > 1) {
                 $result = wp_update_user($update_data);
                 if (is_wp_error($result)) {
                     $error = $result->get_error_message();
                 } elseif (empty($success)) {
                     $success = __t('profile_updated', 'Profile updated successfully.');
                 }
+                // Refresh user data.
                 $user = get_userdata($user_id);
-                // After successful update, exit edit mode.
+                // Exit edit mode after successful save.
                 $edit_mode = false;
+            } else {
+                $success = __t('profile_no_changes', 'No changes were made.');
             }
+        } else {
+            $error = implode('<br>', $errors);
         }
     }
 }
@@ -183,12 +189,7 @@ if ($verify_page) {
                 <div class="field-row">
                     <span class="field-label"><?php _te('register_username', 'Username'); ?></span>
                     <span class="field-value">
-                        <?php if ($edit_mode) : ?>
-                            <input type="text" name="username" id="profile_username"
-                                   value="<?php echo esc_attr($user->user_login); ?>" required />
-                        <?php else : ?>
-                            <strong><?php echo esc_html($user->user_login); ?></strong>
-                        <?php endif; ?>
+                        <strong><?php echo esc_html($user->user_login); ?></strong>
                     </span>
                 </div>
 
@@ -200,6 +201,18 @@ if ($verify_page) {
                                    value="<?php echo esc_attr($user->user_email); ?>" required />
                         <?php else : ?>
                             <strong><?php echo esc_html($user->user_email); ?></strong>
+                        <?php endif; ?>
+                    </span>
+                </div>
+
+                <div class="field-row">
+                    <span class="field-label"><?php _te('profile_display_name', 'Display Name'); ?></span>
+                    <span class="field-value">
+                        <?php if ($edit_mode) : ?>
+                            <input type="text" name="display_name" id="profile_display_name"
+                                   value="<?php echo esc_attr($user->display_name); ?>" required />
+                        <?php else : ?>
+                            <strong><?php echo esc_html($user->display_name); ?></strong>
                         <?php endif; ?>
                     </span>
                 </div>

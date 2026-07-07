@@ -134,6 +134,7 @@ return [
     'login_resend_verification' => 'Gửi lại mã xác thực',
     'register_email_sent' => 'Đăng ký thành công! Vui lòng kiểm tra email để xác thực tài khoản.',
     'register_go_to_login' => 'Đi đến trang đăng nhập',
+    'google_email_exists' => 'Email này đã được đăng ký. Vui lòng đăng nhập bằng mật khẩu hoặc sử dụng tài khoản Google khác.',
 
     //profile
     'profile_title' => 'Hồ sơ của bạn',
@@ -148,8 +149,16 @@ return [
     'profile_save_changes' => 'Lưu thay đổi',
     'profile_edit' => 'Chỉnh sửa hồ sơ',
     'profile_cancel' => 'Hủy',
+    'profile_display_name' => 'Tên hiển thị',
+    'profile_no_changes' => 'Không có thay đổi nào được thực hiện.',
 
     //admin
     'admin_unverified_users' => 'Có %d người dùng chưa xác thực email. Họ có thể đăng nhập nhưng chưa xác thực email.',
     
+    // Google OAuth
+    'google_signup_notice' => 'Bạn đang đăng ký bằng Google. Vui lòng chọn tên đăng nhập.',
+    'google_signup_expired' => 'Phiên đăng ký Google của bạn đã hết hạn. Vui lòng thử lại.',
+    'google_display_name_hint' => 'Đây là tên mà người khác sẽ thấy trên trang web.',
+    'google_password_hint' => 'Để trống để sử dụng mật khẩu ngẫu nhiên (bạn vẫn có thể đăng nhập bằng Google).',
+
     ];

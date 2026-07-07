@@ -134,6 +134,7 @@ return [
     'login_resend_verification' => 'Resend verification code',
     'register_email_sent' => 'Registration successful! Please check your email to verify your account.',
     'register_go_to_login' => 'Go to Login',
+    'google_email_exists' => 'This email is already registered. Please log in with your password or use a different Google account.',
 
     //profile
     'profile_title' => 'Your Profile',
@@ -148,9 +149,17 @@ return [
     'profile_save_changes' => 'Save Changes',
     'profile_edit' => 'Edit Profile',
     'profile_cancel' => 'Cancel',
+    'profile_display_name' => 'Display Name',
+    'profile_no_changes' => 'No changes were made.',
 
     //admin
     'admin_unverified_users' => 'There are %d unverified users. They can log in but have not verified their email.',
+
+    // Google OAuth
+    'google_signup_notice' => 'You are signing up with Google. Please choose a username.',
+    'google_signup_expired' => 'Your Google sign-up session has expired. Please try again.',
+    'google_display_name_hint' => 'This is the name others will see on the site.',
+    'google_password_hint' => 'Leave blank to use a randomly generated password (you can still log in with Google).',
 
 
 ];

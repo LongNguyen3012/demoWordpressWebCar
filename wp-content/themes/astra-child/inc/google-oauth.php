@@ -82,9 +82,15 @@ function google_login_or_create_user($user_info) {
     $user = get_user_by('email', $email);
 
     if ($user) {
-        return $user->ID;
+        // Email already exists – refuse to log in via Google.
+        // Set a transient or session to display the error on the login page.
+        set_transient('google_oauth_error', 'This email is already registered. Please log in with your password or use a different Google account.', 60);
+        // Redirect back to login page.
+        wp_redirect(get_permalink(get_page_by_path('login')));
+        exit;
     }
 
+    // If no existing user, create a new one.
     $username = sanitize_user($user_info['email']);
     if (username_exists($username)) {
         $i = 1;
@@ -95,11 +101,11 @@ function google_login_or_create_user($user_info) {
     }
 
     $user_id = wp_insert_user(array(
-        'user_login' => $username,
-        'user_email' => $email,
-        'user_pass'  => wp_generate_password(),
+        'user_login'   => $username,
+        'user_email'   => $email,
+        'user_pass'    => wp_generate_password(),
         'display_name' => sanitize_text_field($user_info['name'] ?? $username),
-        'role'       => 'subscriber' 
+        'role'         => 'subscriber'
     ));
 
     if (is_wp_error($user_id)) {
@@ -107,6 +113,5 @@ function google_login_or_create_user($user_info) {
     }
 
     update_user_meta($user_id, 'email_verified', '1');
-
     return $user_id;
 }
