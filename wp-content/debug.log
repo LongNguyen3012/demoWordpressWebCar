@@ -16,3 +16,116 @@ Stack trace:
 [03-Jul-2026 09:15:25 UTC] PHP Parse error:  syntax error, unexpected token "{" in /var/www/html/wp-content/themes/astra-child/inc/frontend-enqueue.php on line 30
 [03-Jul-2026 09:16:26 UTC] PHP Parse error:  syntax error, unexpected token "{" in /var/www/html/wp-content/themes/astra-child/inc/frontend-enqueue.php on line 30
 [03-Jul-2026 09:18:27 UTC] PHP Parse error:  syntax error, unexpected token "{" in /var/www/html/wp-content/themes/astra-child/inc/frontend-enqueue.php on line 30
+[06-Jul-2026 03:49:01 UTC] PHP Warning:  require_once(/var/www/html/wp-content/themes/astra-child/inc/login-redirect.php): Failed to open stream: No such file or directory in /var/www/html/wp-content/themes/astra-child/functions.php on line 39
+[06-Jul-2026 03:49:01 UTC] PHP Fatal error:  Uncaught Error: Failed opening required '/var/www/html/wp-content/themes/astra-child/inc/login-redirect.php' (include_path='.:/usr/local/lib/php') in /var/www/html/wp-content/themes/astra-child/functions.php:39
+Stack trace:
+#0 /var/www/html/wp-settings.php(739): include()
+#1 /var/www/html/wp-config.php(147): require_once('/var/www/html/w...')
+#2 /var/www/html/wp-load.php(50): require_once('/var/www/html/w...')
+#3 /var/www/html/wp-admin/admin-ajax.php(22): require_once('/var/www/html/w...')
+#4 {main}
+  thrown in /var/www/html/wp-content/themes/astra-child/functions.php on line 39
+[06-Jul-2026 03:49:01 UTC] PHP Notice:  Function _load_textdomain_just_in_time was called <strong>incorrectly</strong>. Translation loading for the <code>astra-child</code> domain was triggered too early. This is usually an indicator for some code in the plugin or theme running too early. Translations should be loaded at the <code>init</code> action or later. Please see <a href="https://developer.wordpress.org/advanced-administration/debug/debug-wordpress/">Debugging in WordPress</a> for more information. (This message was added in version 6.7.0.) in /var/www/html/wp-includes/functions.php on line 6170
+[06-Jul-2026 03:49:01 UTC] PHP Notice:  Function _load_textdomain_just_in_time was called <strong>incorrectly</strong>. Translation loading for the <code>wp-mail-smtp</code> domain was triggered too early. This is usually an indicator for some code in the plugin or theme running too early. Translations should be loaded at the <code>init</code> action or later. Please see <a href="https://developer.wordpress.org/advanced-administration/debug/debug-wordpress/">Debugging in WordPress</a> for more information. (This message was added in version 6.7.0.) in /var/www/html/wp-includes/functions.php on line 6170
+[06-Jul-2026 03:49:01 UTC] PHP Warning:  require_once(/var/www/html/wp-content/themes/astra-child/inc/login-redirect.php): Failed to open stream: No such file or directory in /var/www/html/wp-content/themes/astra-child/functions.php on line 39
+[06-Jul-2026 03:49:02 UTC] PHP Fatal error:  Uncaught Error: Failed opening required '/var/www/html/wp-content/themes/astra-child/inc/login-redirect.php' (include_path='.:/usr/local/lib/php') in /var/www/html/wp-content/themes/astra-child/functions.php:39
+Stack trace:
+#0 /var/www/html/wp-settings.php(739): include()
+#1 /var/www/html/wp-config.php(147): require_once('/var/www/html/w...')
+#2 /var/www/html/wp-load.php(50): require_once('/var/www/html/w...')
+#3 /var/www/html/wp-blog-header.php(13): require_once('/var/www/html/w...')
+#4 /var/www/html/index.php(17): require('/var/www/html/w...')
+#5 {main}
+  thrown in /var/www/html/wp-content/themes/astra-child/functions.php on line 39
+[06-Jul-2026 03:49:49 UTC] PHP Warning:  require_once(/var/www/html/wp-content/themes/astra-child/inc/login-redirect.php): Failed to open stream: No such file or directory in /var/www/html/wp-content/themes/astra-child/functions.php on line 39
+[06-Jul-2026 03:49:49 UTC] PHP Fatal error:  Uncaught Error: Failed opening required '/var/www/html/wp-content/themes/astra-child/inc/login-redirect.php' (include_path='.:/usr/local/lib/php') in /var/www/html/wp-content/themes/astra-child/functions.php:39
+Stack trace:
+#0 /var/www/html/wp-settings.php(739): include()
+#1 /var/www/html/wp-config.php(147): require_once('/var/www/html/w...')
+#2 /var/www/html/wp-load.php(50): require_once('/var/www/html/w...')
+#3 /var/www/html/wp-blog-header.php(13): require_once('/var/www/html/w...')
+#4 /var/www/html/index.php(17): require('/var/www/html/w...')
+#5 {main}
+  thrown in /var/www/html/wp-content/themes/astra-child/functions.php on line 39
+[06-Jul-2026 03:51:02 UTC] PHP Warning:  require_once(/var/www/html/wp-content/themes/astra-child/inc/login-redirect.php): Failed to open stream: No such file or directory in /var/www/html/wp-content/themes/astra-child/functions.php on line 39
+[06-Jul-2026 03:51:02 UTC] PHP Fatal error:  Uncaught Error: Failed opening required '/var/www/html/wp-content/themes/astra-child/inc/login-redirect.php' (include_path='.:/usr/local/lib/php') in /var/www/html/wp-content/themes/astra-child/functions.php:39
+Stack trace:
+#0 /var/www/html/wp-settings.php(739): include()
+#1 /var/www/html/wp-config.php(147): require_once('/var/www/html/w...')
+#2 /var/www/html/wp-load.php(50): require_once('/var/www/html/w...')
+#3 /var/www/html/wp-admin/admin-ajax.php(22): require_once('/var/www/html/w...')
+#4 {main}
+  thrown in /var/www/html/wp-content/themes/astra-child/functions.php on line 39
+[06-Jul-2026 03:53:02 UTC] PHP Warning:  require_once(/var/www/html/wp-content/themes/astra-child/inc/login-redirect.php): Failed to open stream: No such file or directory in /var/www/html/wp-content/themes/astra-child/functions.php on line 39
+[06-Jul-2026 03:53:02 UTC] PHP Fatal error:  Uncaught Error: Failed opening required '/var/www/html/wp-content/themes/astra-child/inc/login-redirect.php' (include_path='.:/usr/local/lib/php') in /var/www/html/wp-content/themes/astra-child/functions.php:39
+Stack trace:
+#0 /var/www/html/wp-settings.php(739): include()
+#1 /var/www/html/wp-config.php(147): require_once('/var/www/html/w...')
+#2 /var/www/html/wp-load.php(50): require_once('/var/www/html/w...')
+#3 /var/www/html/wp-admin/admin-ajax.php(22): require_once('/var/www/html/w...')
+#4 {main}
+  thrown in /var/www/html/wp-content/themes/astra-child/functions.php on line 39
+[06-Jul-2026 04:08:12 UTC] PHP Parse error:  syntax error, unexpected token "<", expecting end of file in /var/www/html/wp-content/themes/astra-child/inc/nav-menu-custom.php on line 95
+[06-Jul-2026 06:49:54 UTC] PHP Fatal error:  Uncaught Error: Call to undefined function custom_password_strength() in /var/www/html/wp-content/themes/astra-child/page-register.php:50
+Stack trace:
+#0 /var/www/html/wp-includes/template-loader.php(132): include()
+#1 /var/www/html/wp-blog-header.php(19): require_once('/var/www/html/w...')
+#2 /var/www/html/index.php(17): require('/var/www/html/w...')
+#3 {main}
+  thrown in /var/www/html/wp-content/themes/astra-child/page-register.php on line 50
+[06-Jul-2026 08:03:15 UTC] Blog archive template: /var/www/html/wp-content/themes/astra/index.php
+[06-Jul-2026 08:03:25 UTC] Blog archive template: /var/www/html/wp-content/themes/astra/index.php
+[06-Jul-2026 08:08:17 UTC] PHP Fatal error:  Cannot redeclare block_unverified_users() (previously declared in /var/www/html/wp-content/themes/astra-child/functions.php:64) in /var/www/html/wp-content/themes/astra-child/inc/email-verification.php on line 93
+[06-Jul-2026 08:15:28 UTC] PHP Fatal error:  Cannot redeclare block_unverified_users() (previously declared in /var/www/html/wp-content/themes/astra-child/functions.php:64) in /var/www/html/wp-content/themes/astra-child/inc/email-verification.php on line 93
+[06-Jul-2026 08:44:28 UTC] PHP Fatal error:  Uncaught Error: Call to undefined function custom_password_strength() in /var/www/html/wp-content/themes/astra-child/page-register.php:50
+Stack trace:
+#0 /var/www/html/wp-includes/template-loader.php(132): include()
+#1 /var/www/html/wp-blog-header.php(19): require_once('/var/www/html/w...')
+#2 /var/www/html/index.php(17): require('/var/www/html/w...')
+#3 {main}
+  thrown in /var/www/html/wp-content/themes/astra-child/page-register.php on line 50
+[06-Jul-2026 09:01:41 UTC] PHP Fatal error:  Uncaught Error: Call to undefined function custom_password_strength() in /var/www/html/wp-content/themes/astra-child/page-register.php:50
+Stack trace:
+#0 /var/www/html/wp-includes/template-loader.php(132): include()
+#1 /var/www/html/wp-blog-header.php(19): require_once('/var/www/html/w...')
+#2 /var/www/html/index.php(17): require('/var/www/html/w...')
+#3 {main}
+  thrown in /var/www/html/wp-content/themes/astra-child/page-register.php on line 50
+[06-Jul-2026 10:47:32 UTC] PHP Fatal error:  Cannot redeclare get_login_page_url() (previously declared in /var/www/html/wp-content/themes/astra-child/inc/login-redirect.php:18) in /var/www/html/wp-content/themes/astra-child/inc/email-verification.php on line 3
+[06-Jul-2026 10:47:42 UTC] PHP Fatal error:  Cannot redeclare get_login_page_url() (previously declared in /var/www/html/wp-content/themes/astra-child/inc/login-redirect.php:18) in /var/www/html/wp-content/themes/astra-child/inc/email-verification.php on line 3
+[06-Jul-2026 10:47:49 UTC] PHP Fatal error:  Cannot redeclare get_login_page_url() (previously declared in /var/www/html/wp-content/themes/astra-child/inc/login-redirect.php:18) in /var/www/html/wp-content/themes/astra-child/inc/email-verification.php on line 3
+[06-Jul-2026 10:47:52 UTC] PHP Fatal error:  Cannot redeclare get_login_page_url() (previously declared in /var/www/html/wp-content/themes/astra-child/inc/login-redirect.php:18) in /var/www/html/wp-content/themes/astra-child/inc/email-verification.php on line 3
+[06-Jul-2026 10:48:02 UTC] PHP Fatal error:  Cannot redeclare get_login_page_url() (previously declared in /var/www/html/wp-content/themes/astra-child/inc/login-redirect.php:18) in /var/www/html/wp-content/themes/astra-child/inc/email-verification.php on line 3
+[06-Jul-2026 10:48:09 UTC] PHP Fatal error:  Cannot redeclare get_login_page_url() (previously declared in /var/www/html/wp-content/themes/astra-child/inc/login-redirect.php:18) in /var/www/html/wp-content/themes/astra-child/inc/email-verification.php on line 3
+[06-Jul-2026 10:48:12 UTC] PHP Fatal error:  Cannot redeclare get_login_page_url() (previously declared in /var/www/html/wp-content/themes/astra-child/inc/login-redirect.php:18) in /var/www/html/wp-content/themes/astra-child/inc/email-verification.php on line 3
+[06-Jul-2026 10:48:51 UTC] PHP Fatal error:  Cannot redeclare get_login_page_url() (previously declared in /var/www/html/wp-content/themes/astra-child/inc/login-redirect.php:18) in /var/www/html/wp-content/themes/astra-child/inc/email-verification.php on line 3
+[07-Jul-2026 02:51:57 UTC] PHP Deprecated:  strip_tags(): Passing null to parameter #1 ($string) of type string is deprecated in /var/www/html/wp-admin/admin-header.php on line 41
+[07-Jul-2026 02:52:51 UTC] PHP Deprecated:  strip_tags(): Passing null to parameter #1 ($string) of type string is deprecated in /var/www/html/wp-admin/admin-header.php on line 41
+[07-Jul-2026 03:05:41 UTC] PHP Fatal error:  Uncaught Error: Call to undefined function custom_password_strength() in /var/www/html/wp-content/themes/astra-child/page-register.php:52
+Stack trace:
+#0 /var/www/html/wp-includes/template-loader.php(132): include()
+#1 /var/www/html/wp-blog-header.php(19): require_once('/var/www/html/w...')
+#2 /var/www/html/index.php(17): require('/var/www/html/w...')
+#3 {main}
+  thrown in /var/www/html/wp-content/themes/astra-child/page-register.php on line 52
+[07-Jul-2026 06:18:43 UTC] PHP Fatal error:  Uncaught Error: Undefined constant "GOOGLE_CLIENT_ID" in /var/www/html/wp-content/themes/astra-child/page-login.php:18
+Stack trace:
+#0 /var/www/html/wp-includes/template-loader.php(132): include()
+#1 /var/www/html/wp-blog-header.php(19): require_once('/var/www/html/w...')
+#2 /var/www/html/index.php(17): require('/var/www/html/w...')
+#3 {main}
+  thrown in /var/www/html/wp-content/themes/astra-child/page-login.php on line 18
+[07-Jul-2026 06:20:07 UTC] PHP Fatal error:  Uncaught Error: Undefined constant "GOOGLE_CLIENT_ID" in /var/www/html/wp-content/themes/astra-child/page-login.php:18
+Stack trace:
+#0 /var/www/html/wp-includes/template-loader.php(132): include()
+#1 /var/www/html/wp-blog-header.php(19): require_once('/var/www/html/w...')
+#2 /var/www/html/index.php(17): require('/var/www/html/w...')
+#3 {main}
+  thrown in /var/www/html/wp-content/themes/astra-child/page-login.php on line 18
+[07-Jul-2026 06:30:29 UTC] PHP Fatal error:  Uncaught Error: Undefined constant "GOOGLE_CLIENT_ID" in /var/www/html/wp-content/themes/astra-child/page-login.php:18
+Stack trace:
+#0 /var/www/html/wp-includes/template-loader.php(132): include()
+#1 /var/www/html/wp-blog-header.php(19): require_once('/var/www/html/w...')
+#2 /var/www/html/index.php(17): require('/var/www/html/w...')
+#3 {main}
+  thrown in /var/www/html/wp-content/themes/astra-child/page-login.php on line 18

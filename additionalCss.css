@@ -17,10 +17,14 @@ body {
     padding: 0 20px;
     box-sizing: border-box;
 }
+
+/* ===== Homepage ===== */
 .custom-homepage {
     overflow: hidden !important;
     max-width: 100% !important;
 }
+
+/* Hero Slider */
 .hero-slider-wrapper {
     width: 100%;
     max-width: 100vw;
@@ -173,6 +177,8 @@ body {
     padding: 0 40px;
     width: 100%;
 }
+
+/* ===== Cars Grid ===== */
 .cars-grid-wrapper {
     width: 100%;
     padding: 60px 30px;
@@ -273,6 +279,8 @@ body {
     width: 100%;
     height: 100%;
 }
+
+/* ===== News ===== */
 .news-section {
     padding: 60px 0;
     background: #fff;
@@ -509,6 +517,8 @@ body {
     font-weight: 500;
     text-align: center;
 }
+
+/* ===== Car, Banner, About ===== */
 .single-car .container {
     max-width: 800px;
     margin: 0 auto;
@@ -608,6 +618,8 @@ body {
 .team-member p {
     color: #666;
 }
+
+/* ===== Language Switcher ===== */
 .language-switcher {
     display: flex;
     align-items: center;
@@ -641,6 +653,8 @@ body {
         justify-content: center;
     }
 }
+
+/* ===== Responsive Tweaks ===== */
 @media (max-width: 768px) {
     .cars-grid-wrapper {
         padding: 40px 15px !important;
@@ -709,4 +723,84 @@ body {
     .filter-tabs li a {
         font-size: 0.85rem;
     }
+}
+
+.ast-primary-header-bar .main-navigation .menu-item-has-children {
+    position: relative;
+}
+.ast-primary-header-bar .main-navigation .sub-menu {
+    min-width: 100%;
+    width: auto;
+    max-width: 280px;
+    white-space: nowrap;
+    left: 0;
+    right: auto;
+    box-sizing: border-box;
+}
+.ast-primary-header-bar .main-navigation .sub-menu .menu-item {
+    width: 100%;
+}
+.ast-primary-header-bar .main-navigation .sub-menu .menu-item a {
+    padding: 8px 16px;
+    display: block;
+}
+@media (max-width: 768px) {
+    .ast-primary-header-bar .main-navigation .sub-menu {
+        min-width: 180px;
+        max-width: 220px;
+        left: auto;
+        right: 0;
+    }
+}
+
+/* ===== Login & Profile Forms (centered & well‑spaced) ===== */
+.login-wrapper,
+.profile-wrapper {
+    max-width: 100%;
+    margin: 0 auto;
+    padding: 20px 0;
+}
+
+@media (min-width: 768px) {
+    .login-wrapper {
+        max-width: 450px;
+        padding: 40px 0;
+    }
+    .profile-wrapper {
+        max-width: 650px;
+        padding: 40px 0;
+    }
+}
+
+.login-wrapper input[type="text"],
+.login-wrapper input[type="password"],
+.login-wrapper input[type="email"],
+.profile-wrapper input[type="text"],
+.profile-wrapper input[type="email"],
+.profile-wrapper input[type="password"] {
+    width: 100%;
+    box-sizing: border-box;
+    padding: 10px;
+    margin: 5px 0;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+}
+
+
+.login-wrapper label,
+.profile-wrapper label {
+    display: block;
+    font-weight: 600;
+    margin-top: 15px;
+}
+
+
+.unverified-warning {
+    background: #fce8e8;
+    border-left: 4px solid #d63638;
+    padding: 15px;
+    margin-bottom: 20px;
+}
+.unverified-warning p {
+    margin: 0;
 }

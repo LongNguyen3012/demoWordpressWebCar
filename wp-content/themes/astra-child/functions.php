@@ -7,7 +7,6 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
-
 add_action( 'wp_enqueue_scripts', 'astra_child_enqueue_styles' );
 function astra_child_enqueue_styles() {
     wp_enqueue_style( 'astra-theme-css', get_template_directory_uri() . '/style.css', array(), ASTRA_THEME_VERSION );
@@ -36,6 +35,16 @@ require_once ASTRA_CHILD_INC_DIR . 'class-language.php';
 require_once ASTRA_CHILD_INC_DIR . 'language-helpers.php';
 require_once ASTRA_CHILD_INC_DIR . 'translation-filters.php';
 
+require_once ASTRA_CHILD_INC_DIR . 'login-redirect.php';
+require_once ASTRA_CHILD_INC_DIR . 'custom-login-url.php';
+require_once ASTRA_CHILD_INC_DIR . 'google-oauth.php';
+require_once ASTRA_CHILD_INC_DIR . 'password-strength.php';
+require_once ASTRA_CHILD_INC_DIR . 'register-enqueue.php';
+require_once ASTRA_CHILD_INC_DIR . 'register-ajax.php';
+
+
+require_once ASTRA_CHILD_INC_DIR . 'email-verification.php';
+
 require_once ASTRA_CHILD_INC_DIR . 'nav-menu-custom.php';
 
 add_action( 'init', 'astra_child_init_language' );
@@ -52,4 +61,3 @@ add_action('template_include', function($template) {
     }
     return $template;
 });
-

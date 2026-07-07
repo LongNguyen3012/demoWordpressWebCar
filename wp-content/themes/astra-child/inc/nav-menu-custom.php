@@ -13,17 +13,17 @@ function add_cars_archive_menu_item($items, $args) {
 
     foreach ($items as $item) {
         if ($item->url === $car_archive_url) {
-            return $items; 
+            return $items;
         }
     }
 
     $new_item = new stdClass();
-    $new_item->ID = 999999;                
+    $new_item->ID = 999999;
     $new_item->db_id = 0;
-    $new_item->title = __t('nav_cars', 'Cars'); 
+    $new_item->title = __t('nav_cars', 'Cars');
     $new_item->url = $car_archive_url;
-    $new_item->menu_order = 100;           
-    $new_item->menu_item_parent = 0;   
+    $new_item->menu_order = 100;
+    $new_item->menu_item_parent = 0;
     $new_item->type = 'custom';
     $new_item->object = 'custom';
     $new_item->object_id = 0;
@@ -35,7 +35,7 @@ function add_cars_archive_menu_item($items, $args) {
     $new_item->current = false;
 
     $position = 2;
-    array_splice($items, $position, 0, array($new_item));  
+    array_splice($items, $position, 0, array($new_item));
 
     return $items;
 }
@@ -70,4 +70,39 @@ function add_language_switcher_items($items, $args) {
     $switcher .= '</ul></li>';
 
     return $items . $switcher;
+}
+
+add_filter('wp_nav_menu_items', 'add_account_menu_item', 10, 2);
+function add_account_menu_item($items, $args) {
+    if ($args->theme_location !== 'primary') {
+        return $items;
+    }
+
+    $login_page = get_permalink(get_page_by_path('login'));
+    $register_page = get_permalink(get_page_by_path('register'));
+    $profile_page = get_permalink(get_page_by_path('profile'));
+
+    if (is_user_logged_in()) {
+        $logout_url = wp_logout_url(home_url('/'));
+        $items .= '<li class="menu-item menu-item-has-children">';
+        $items .= '<a href="#" class="menu-link">' . __t('nav_account', 'Account') . ' <span class="ast-icon icon-arrow">▼</span></a>';
+        $items .= '<ul class="sub-menu">';
+        if ($profile_page) {
+            $items .= '<li class="menu-item"><a href="' . esc_url($profile_page) . '" class="menu-link">' . __t('profile_title', 'Profile') . '</a></li>';
+        }
+        $items .= '<li class="menu-item"><a href="' . esc_url($logout_url) . '" class="menu-link">' . __t('login_logout', 'Log Out') . '</a></li>';
+        $items .= '</ul></li>';
+    } else {
+        if (!$login_page || !$register_page) {
+            return $items;
+        }
+        $items .= '<li class="menu-item menu-item-has-children">';
+        $items .= '<a href="#" class="menu-link">' . __t('nav_account', 'Account') . ' <span class="ast-icon icon-arrow">▼</span></a>';
+        $items .= '<ul class="sub-menu">';
+        $items .= '<li class="menu-item"><a href="' . esc_url($login_page) . '" class="menu-link">' . __t('login_title', 'Log In') . '</a></li>';
+        $items .= '<li class="menu-item"><a href="' . esc_url($register_page) . '" class="menu-link">' . __t('register_title', 'Create Account') . '</a></li>';
+        $items .= '</ul></li>';
+    }
+
+    return $items;
 }
