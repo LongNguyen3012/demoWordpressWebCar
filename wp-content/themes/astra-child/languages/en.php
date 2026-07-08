@@ -83,6 +83,8 @@ return [
     'login_logout' => 'Log Out',
     'login_error' => 'Invalid username or password.',
     'login_already_logged_in' => 'You are already logged in.',
+    'login_or' => 'OR',
+    'login_google' => 'Sign in with Google',
     'register_no_account' => 'Don\'t have an account? Register',
     'register_title' => 'Create Account',
     'register_username' => 'Username',

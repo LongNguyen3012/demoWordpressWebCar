@@ -1,15 +1,33 @@
 <?php
 /**
- * Handle Google OAuth callback
+ * Google OAuth Login Handler
  */
 
-$secret_file = __DIR__ . '/google-secret.php';
-if (file_exists($secret_file)) {
-    require_once $secret_file;
+if (!defined('GOOGLE_CLIENT_ID')) {
+    $client_id = getenv('GOOGLE_CLIENT_ID');
+    if ($client_id) {
+        define('GOOGLE_CLIENT_ID', $client_id);
+    }
+}
+if (!defined('GOOGLE_CLIENT_SECRET')) {
+    $client_secret = getenv('GOOGLE_CLIENT_SECRET');
+    if ($client_secret) {
+        define('GOOGLE_CLIENT_SECRET', $client_secret);
+    }
+}
+
+$client_id = getenv('GOOGLE_CLIENT_ID') ?: (defined('GOOGLE_CLIENT_ID') ? GOOGLE_CLIENT_ID : '');
+$client_secret = getenv('GOOGLE_CLIENT_SECRET') ?: (defined('GOOGLE_CLIENT_SECRET') ? GOOGLE_CLIENT_SECRET : '');
+
+if (empty($client_id) || empty($client_secret)) {
+    error_log('Google OAuth credentials missing.');
+    return;
 }
 
 add_action('init', 'handle_google_oauth_callback');
 function handle_google_oauth_callback() {
+    global $client_id, $client_secret; // <-- Make them accessible inside the function
+
     if (empty($_GET['code']) || empty($_GET['state']) || empty($_GET['google_oauth'])) {
         return;
     }
@@ -19,7 +37,7 @@ function handle_google_oauth_callback() {
     }
 
     $code = $_GET['code'];
-    $token_response = google_exchange_code_for_token($code);
+    $token_response = google_exchange_code_for_token($code, $client_id, $client_secret);
 
     if (empty($token_response['access_token'])) {
         wp_die('Failed to get access token.');
@@ -31,31 +49,41 @@ function handle_google_oauth_callback() {
         wp_die('Failed to get user email.');
     }
 
-    $user_id = google_login_or_create_user($user_info);
+    $email = sanitize_email($user_info['email']);
+    $existing_user = get_user_by('email', $email);
 
-    if ($user_id) {
-        wp_set_auth_cookie($user_id);
+    if ($existing_user) {
+        wp_set_auth_cookie($existing_user->ID);
+        update_user_meta($existing_user->ID, 'email_verified', '1');
         wp_redirect(home_url('/'));
         exit;
-    } else {
-        wp_die('Could not log you in.');
     }
+
+    $key = 'google_signup_' . md5($email);
+    set_transient($key, array(
+        'email'        => $email,
+        'display_name' => sanitize_text_field($user_info['name'] ?? $email),
+        'verified'     => true
+    ), 300);
+
+    setcookie('google_signup_email', $email, time() + 300, COOKIEPATH, COOKIE_DOMAIN);
+
+    $register_url = add_query_arg('google_oauth', '1', get_permalink(get_page_by_path('register')));
+    wp_redirect($register_url);
+    exit;
 }
 
-function google_exchange_code_for_token($code) {
+function google_exchange_code_for_token($code, $client_id, $client_secret) {
     $url = 'https://oauth2.googleapis.com/token';
     $body = array(
         'code'          => $code,
-        'client_id'     => GOOGLE_CLIENT_ID,
-        'client_secret' => GOOGLE_CLIENT_SECRET,
+        'client_id'     => $client_id,
+        'client_secret' => $client_secret,
         'redirect_uri'  => home_url('/?google_oauth=1'),
         'grant_type'    => 'authorization_code'
     );
 
-    $response = wp_remote_post($url, array(
-        'body' => $body
-    ));
-
+    $response = wp_remote_post($url, array('body' => $body));
     if (is_wp_error($response)) {
         return array();
     }
@@ -63,55 +91,13 @@ function google_exchange_code_for_token($code) {
     $body = wp_remote_retrieve_body($response);
     return json_decode($body, true);
 }
-
 
 function google_fetch_user_info($access_token) {
     $url = 'https://www.googleapis.com/oauth2/v2/userinfo?access_token=' . urlencode($access_token);
     $response = wp_remote_get($url);
-
     if (is_wp_error($response)) {
         return array();
     }
-
     $body = wp_remote_retrieve_body($response);
     return json_decode($body, true);
-}
-
-function google_login_or_create_user($user_info) {
-    $email = sanitize_email($user_info['email']);
-    $user = get_user_by('email', $email);
-
-    if ($user) {
-        // Email already exists – refuse to log in via Google.
-        // Set a transient or session to display the error on the login page.
-        set_transient('google_oauth_error', 'This email is already registered. Please log in with your password or use a different Google account.', 60);
-        // Redirect back to login page.
-        wp_redirect(get_permalink(get_page_by_path('login')));
-        exit;
-    }
-
-    // If no existing user, create a new one.
-    $username = sanitize_user($user_info['email']);
-    if (username_exists($username)) {
-        $i = 1;
-        while (username_exists($username . $i)) {
-            $i++;
-        }
-        $username = $username . $i;
-    }
-
-    $user_id = wp_insert_user(array(
-        'user_login'   => $username,
-        'user_email'   => $email,
-        'user_pass'    => wp_generate_password(),
-        'display_name' => sanitize_text_field($user_info['name'] ?? $username),
-        'role'         => 'subscriber'
-    ));
-
-    if (is_wp_error($user_id)) {
-        return false;
-    }
-
-    update_user_meta($user_id, 'email_verified', '1');
-    return $user_id;
 }

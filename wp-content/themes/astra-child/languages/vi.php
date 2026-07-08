@@ -83,6 +83,8 @@ return [
     'login_logout' => 'Đăng xuất',
     'login_error' => 'Tên đăng nhập hoặc mật khẩu không đúng.',
     'login_already_logged_in' => 'Bạn đã đăng nhập.',
+    'login_or' => 'HOẶC',
+    'login_google' => 'Đăng nhập bằng Google',
     'register_no_account' => 'Chưa có tài khoản? Đăng ký',
     'register_title' => 'Tạo tài khoản',
     'register_username' => 'Tên đăng nhập',
