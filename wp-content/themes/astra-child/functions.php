@@ -18,7 +18,7 @@ function initialize_custom_languages() {
     $languages = get_option('custom_languages');
     if (empty($languages) || !is_array($languages)) {
         update_option('custom_languages', ['en' => 'English', 'vi' => 'Tiếng Việt']);
-        error_log('✅ Custom languages option created.');
+        error_log('Custom languages option created.');
     }
 }
 
@@ -34,6 +34,7 @@ require_once ASTRA_CHILD_INC_DIR . 'banner-admin-utils.php';
 require_once ASTRA_CHILD_INC_DIR . 'class-language.php';
 require_once ASTRA_CHILD_INC_DIR . 'language-helpers.php';
 require_once ASTRA_CHILD_INC_DIR . 'translation-filters.php';
+require_once ASTRA_CHILD_INC_DIR . 'news-scraper.php';
 
 require_once ASTRA_CHILD_INC_DIR . 'login-redirect.php';
 require_once ASTRA_CHILD_INC_DIR . 'custom-login-url.php';

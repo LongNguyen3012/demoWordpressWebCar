@@ -163,5 +163,19 @@ return [
     'google_display_name_hint' => 'This is the name others will see on the site.',
     'google_password_hint' => 'Leave blank to use a randomly generated password (you can still log in with Google).',
 
+    //scraped news
+    'scraped_news_title' => 'Latest Automotive News',
+    'scraped_last_updated' => 'Last updated',
+    'scraped_all_news' => 'All News',
+    'scraped_total_articles' => 'Total',
+    'scraped_no_news' => 'No car news available at the moment.',
+    'scraped_disclaimer' => 'News articles are sourced from AutoPro and are for informational purposes only.',
+    'scraper_source' => 'Source',
+    'scraper_vietnamese' => 'Vietnam',
+    'scraped_news_title_home' => 'Latest Automotive News',
+    'scraped_view_all' => 'View All Automotive News',
+    'pagination_prev' => 'Previous',
+    'pagination_next' => 'Next',
+    'scraped_search_placeholder' => 'Search news...',
 
 ];

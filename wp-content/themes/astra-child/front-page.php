@@ -155,6 +155,56 @@ get_header();
         </div>
     </section>
 
+    <section class="scraped-news-section">
+        <div class="container">
+            <h2 class="section-title"><?php _te('scraped_news_title_home', 'Latest Automotive News'); ?></h2>
+            
+            <?php 
+            if (class_exists('News_Scraper')) {
+                $scraper = new News_Scraper();
+                $data = $scraper->fetch_all();
+                error_log('Data from scraper: ' . print_r($data, true));
+
+                if (!empty($data) && !empty($data['articles'])) {
+                    $all_articles = [];
+                    foreach ($data['articles'] as $category_articles) {
+                        $all_articles = array_merge($all_articles, $category_articles);
+                    }
+                    usort($all_articles, function($a, $b) {
+                        return strcmp($a['time'] ?? '', $b['time'] ?? '');
+                    });
+                    $home_articles = array_slice($all_articles, 0, 5);
+                    ?>
+                    <div class="news-list scraped-news-list">
+                        <?php foreach ($home_articles as $item) : ?>
+                            <div class="news-item scraped-news-item">
+                                <a href="<?php echo esc_url($item['link']); ?>" target="_blank" rel="noopener noreferrer">
+                                    <span class="news-title"><?php echo esc_html($item['title']); ?></span>
+                                    <span class="news-date">
+                                        <?php echo esc_html($item['time'] ?: ''); ?>
+                                        <span class="news-source-badge"><?php _te('scraper_source', 'Source'); ?>: <?php echo esc_html($item['source']); ?></span>
+                                    </span>
+                                </a>
+                            </div>
+                        <?php endforeach; ?>
+                    </div>
+                    <?php
+                } else {
+                    echo '<p>' . __t('scraped_no_news', 'No car news available at the moment.') . '</p>';
+                }
+            } else {
+                echo '<p>' . __t('scraped_no_news', 'No car news available at the moment.') . '</p>';
+            }
+            ?>
+
+            <div style="text-align: center; margin-top: 30px;">
+                <a href="<?php echo get_permalink(get_page_by_path('scraped-news')); ?>" class="btn-primary" style="background: #2C2C2C; color: #fff; padding: 12px 40px; text-decoration: none; text-transform: uppercase; letter-spacing: 2px; display: inline-block;">
+                    <?php _te('scraped_view_all', 'View All Automotive News'); ?> →
+                </a>
+            </div>
+        </div>
+    </section>
+
 </div>
 
 <?php

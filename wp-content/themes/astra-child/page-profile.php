@@ -50,9 +50,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['profile_update'])) {
                 } elseif (empty($success)) {
                     $success = __t('profile_updated', 'Profile updated successfully.');
                 }
-                // Refresh user data.
                 $user = get_userdata($user_id);
-                // Exit edit mode after successful save.
                 $edit_mode = false;
             } else {
                 $success = __t('profile_no_changes', 'No changes were made.');

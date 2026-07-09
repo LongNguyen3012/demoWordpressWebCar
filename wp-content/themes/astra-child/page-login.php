@@ -23,11 +23,9 @@ $register_page_url = get_permalink(get_page_by_path('register'));
             <h1><?php _te('login_title', 'Log In'); ?></h1>
 
             <?php
-            // Display login errors.
             if (isset($_GET['login']) && $_GET['login'] === 'failed') {
                 echo '<p class="login-error">' . __t('login_error', 'Invalid username or password.') . '</p>';
             }
-            // Display Google OAuth error if any.
             if (get_transient('google_oauth_error')) {
                 echo '<p class="login-error" style="color:#d63638;">' . get_transient('google_oauth_error') . '</p>';
                 delete_transient('google_oauth_error');

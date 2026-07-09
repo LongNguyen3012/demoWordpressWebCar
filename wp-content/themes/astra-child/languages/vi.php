@@ -163,4 +163,19 @@ return [
     'google_display_name_hint' => 'Đây là tên mà người khác sẽ thấy trên trang web.',
     'google_password_hint' => 'Để trống để sử dụng mật khẩu ngẫu nhiên (bạn vẫn có thể đăng nhập bằng Google).',
 
+    //scraped news
+    'scraped_news_title' => 'Tin tức ô tô mới nhất',
+    'scraped_last_updated' => 'Cập nhật lần cuối',
+    'scraped_all_news' => 'Tất cả tin tức',
+    'scraped_total_articles' => 'Tổng số',
+    'scraped_no_news' => 'Hiện chưa có tin tức ô tô.',
+    'scraped_disclaimer' => 'Tin tức được tổng hợp từ AutoPro và chỉ mang tính chất tham khảo.',
+    'scraper_source' => 'Nguồn',
+    'scraper_vietnamese' => 'Việt Nam',
+    'scraped_news_title_home' => 'Tin tức ô tô mới nhất',
+    'scraped_view_all' => 'Xem tất cả tin tức ô tô',
+    'pagination_prev' => 'Trang trước',
+    'pagination_next' => 'Trang sau',
+    'scraped_search_placeholder' => 'Tìm kiếm tin tức...',
+
     ];
