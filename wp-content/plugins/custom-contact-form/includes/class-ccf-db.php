@@ -1,8 +1,4 @@
 <?php
-/**
- * Class CCF_DB
- * Handles database operations and caching.
- */
 class CCF_DB {
     private static $table_name;
 
@@ -43,10 +39,6 @@ class CCF_DB {
         }
     }
 
-    /**
-     * @param array $data 
-     * @return int|false 
-     */
     public static function insert( $data ) {
         global $wpdb;
         $result = $wpdb->insert(
@@ -67,30 +59,52 @@ class CCF_DB {
         return $wpdb->insert_id;
     }
 
-    /**
-     * @param int $page 
-     * @param int $per_page 
-     * @return array 
-     */
-    public static function get_submissions( $page = 1, $per_page = 20 ) {
+    public static function get_submissions( $page = 1, $per_page = 20, $orderby = 'submitted_at', $order = 'DESC' ) {
         global $wpdb;
         $offset = ( $page - 1 ) * $per_page;
-        $cache_key = 'ccf_submissions_page_' . $page . '_' . $per_page;
 
-        $results = get_transient( $cache_key );
-        if ( false !== $results ) {
-            return $results;
+        // Whitelist allowed columns and order direction.
+        $allowed_orderby = [ 'id', 'name', 'email', 'submitted_at', 'status' ];
+        if ( ! in_array( $orderby, $allowed_orderby, true ) ) {
+            $orderby = 'submitted_at';
+        }
+        $order = strtoupper( $order ) === 'ASC' ? 'ASC' : 'DESC';
+
+        // Escape for SQL safety.
+        $orderby = esc_sql( $orderby );
+        $order   = esc_sql( $order );
+
+        $cache_key = 'ccf_submissions_page_' . $page . '_' . $per_page . '_' . $orderby . '_' . $order;
+        $cached = get_transient( $cache_key );
+        if ( false !== $cached ) {
+            return $cached;
         }
 
-        $results = $wpdb->get_results(
-            $wpdb->prepare(
-                "SELECT * FROM " . self::$table_name . " ORDER BY submitted_at DESC LIMIT %d OFFSET %d",
-                $per_page,
-                $offset
-            )
+        // Build ORDER BY separately – do NOT use placeholders for column/order.
+        $sql = sprintf(
+            "SELECT * FROM %s ORDER BY `%s` %s LIMIT %%d OFFSET %%d",
+            self::$table_name,
+            $orderby,
+            $order
         );
-        set_transient( $cache_key, $results, 300 ); // 5 minutes
-        return $results;
+
+        $prepared = $wpdb->prepare( $sql, $per_page, $offset );
+        $items = $wpdb->get_results( $prepared );
+
+        // Log any database error for debugging.
+        if ( $wpdb->last_error ) {
+            error_log( 'CCF DB query error: ' . $wpdb->last_error . ' SQL: ' . $prepared );
+            $items = [];
+        }
+
+        $total = (int) $wpdb->get_var( "SELECT COUNT(*) FROM " . self::$table_name );
+
+        $data = [
+            'items' => $items,
+            'total' => $total,
+        ];
+        set_transient( $cache_key, $data, 300 );
+        return $data;
     }
 
     public static function get_counts() {
@@ -120,9 +134,6 @@ class CCF_DB {
         return $result;
     }
 
-    /**
-     * @param array $ids 
-     */
     public static function delete( $ids ) {
         global $wpdb;
         if ( empty( $ids ) ) {
@@ -135,10 +146,6 @@ class CCF_DB {
         self::clear_cache();
     }
 
-    /**
-     * @param array $ids 
-     * @param string $status 
-     */
     public static function bulk_update_status( $ids, $status ) {
         global $wpdb;
         if ( empty( $ids ) ) {
@@ -150,7 +157,6 @@ class CCF_DB {
         );
         self::clear_cache();
     }
-
 
     private static function clear_cache() {
         global $wpdb;
