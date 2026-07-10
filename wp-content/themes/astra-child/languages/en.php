@@ -178,4 +178,9 @@ return [
     'pagination_next' => 'Next',
     'scraped_search_placeholder' => 'Search news...',
 
+    //chat
+    'nav_chat' => 'Live Chat',
+    'chat_type_message' => 'Type a message...',
+    'chat_send' => 'Send',
+
 ];

@@ -72,6 +72,43 @@ function add_language_switcher_items($items, $args) {
     return $items . $switcher;
 }
 
+add_filter('wp_nav_menu_objects', 'add_chat_menu_item_object', 10, 2);
+function add_chat_menu_item_object($items, $args) {
+    if ($args->theme_location !== 'primary') {
+        return $items;
+    }
+    $chat_page = get_page_by_path('chat');
+    if (!$chat_page) {
+        return $items;
+    }
+    $chat_url = get_permalink($chat_page);
+    // Avoid duplicates
+    foreach ($items as $item) {
+        if (isset($item->url) && $item->url === $chat_url) {
+            return $items;
+        }
+    }
+    $new_item = new stdClass();
+    $new_item->ID = 999998;
+    $new_item->db_id = 0;
+    $new_item->title = __t('nav_chat', 'Live Chat');
+    $new_item->url = $chat_url;
+    $new_item->menu_order = 101;
+    $new_item->menu_item_parent = 0;
+    $new_item->type = 'custom';
+    $new_item->object = 'custom';
+    $new_item->object_id = 0;
+    $new_item->classes = array('menu-item', 'menu-item-type-custom');
+    $new_item->target = '';
+    $new_item->attr_title = '';
+    $new_item->description = '';
+    $new_item->xfn = '';
+    $new_item->current = false;
+    // Append at the end
+    $items[] = $new_item;
+    return $items;
+}
+
 add_filter('wp_nav_menu_items', 'add_account_menu_item', 10, 2);
 function add_account_menu_item($items, $args) {
     if ($args->theme_location !== 'primary') {

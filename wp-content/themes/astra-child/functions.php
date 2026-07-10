@@ -22,6 +22,9 @@ function initialize_custom_languages() {
     }
 }
 
+define('CHAT_NODE_SERVER_URL', 'http://chat-server:3000/new-message');
+define('CHAT_WS_URL', 'ws://localhost:8080');
+
 define( 'ASTRA_CHILD_INC_DIR', __DIR__ . '/inc/' );
 
 require_once ASTRA_CHILD_INC_DIR . 'custom-post-types.php';
@@ -43,6 +46,9 @@ require_once ASTRA_CHILD_INC_DIR . 'password-strength.php';
 require_once ASTRA_CHILD_INC_DIR . 'register-enqueue.php';
 require_once ASTRA_CHILD_INC_DIR . 'register-ajax.php';
 
+require_once ASTRA_CHILD_INC_DIR . 'chat-db.php';
+require_once ASTRA_CHILD_INC_DIR . 'chat-rest.php';
+require_once ASTRA_CHILD_INC_DIR . 'chat-enqueue.php';
 
 require_once ASTRA_CHILD_INC_DIR . 'email-verification.php';
 
@@ -55,6 +61,20 @@ function astra_child_init_language() {
     }
     Language::get_instance();
 }
+
+add_filter('rest_authentication_errors', function($result) {
+    if (!empty($result)) {
+        return $result;
+    }
+    $current_route = isset($_SERVER['REQUEST_URI']) ? $_SERVER['REQUEST_URI'] : '';
+    if (strpos($current_route, '/mytheme/v1/chat/message/') !== false) {
+        return $result;
+    }
+    if (!is_user_logged_in()) {
+        return new WP_Error('rest_not_logged_in', 'You are not logged in.', array('status' => 401));
+    }
+    return $result;
+});
 
 add_action('template_include', function($template) {
     if (is_home()) {

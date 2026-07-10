@@ -40,5 +40,16 @@ services:
     depends_on:
       - db
 
+  chat-server:
+    build:
+      context: ./chat-server
+      dockerfile: Dockerfile
+    ports:
+      - "8080:8080"
+    environment:
+      - WP_URL=http://wordpress:80
+    restart: unless-stopped
+
+
 volumes:
   db_data: {}

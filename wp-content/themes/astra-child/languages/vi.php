@@ -178,4 +178,9 @@ return [
     'pagination_next' => 'Trang sau',
     'scraped_search_placeholder' => 'Tìm kiếm tin tức...',
 
+    //chat
+    'nav_chat' => 'Trò chuyện trực tiếp',
+    'chat_type_message' => 'Nhập tin nhắn...',
+    'chat_send' => 'Gửi',
+
     ];
