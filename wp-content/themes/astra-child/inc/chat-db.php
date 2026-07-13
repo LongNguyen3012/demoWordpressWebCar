@@ -1,21 +1,13 @@
 <?php
-add_action('admin_init', function() {
-    if (!get_option('chat_tables_created')) {
-        chat_create_tables();
-        update_option('chat_tables_created', 1);
-    }
-    if (get_option('chat_tables_created') && !get_option('chat_tables_upgraded')) {
-        chat_upgrade_tables();
-        update_option('chat_tables_upgraded', 1);
-    }
-});
-
 function chat_create_tables() {
     global $wpdb;
     $charset_collate = $wpdb->get_charset_collate();
     $table_rooms = $wpdb->prefix . 'chat_rooms';
     $table_messages = $wpdb->prefix . 'chat_messages';
     $table_members = $wpdb->prefix . 'chat_room_members';
+    $table_reactions = $wpdb->prefix . 'chat_reactions';
+    $table_read = $wpdb->prefix . 'chat_read_receipts';
+
     $sql_rooms = "CREATE TABLE $table_rooms (
         id BIGINT(20) UNSIGNED NOT NULL AUTO_INCREMENT,
         name VARCHAR(255) DEFAULT '',
@@ -24,6 +16,7 @@ function chat_create_tables() {
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
         PRIMARY KEY (id)
     ) $charset_collate;";
+
     $sql_messages = "CREATE TABLE $table_messages (
         id BIGINT(20) UNSIGNED NOT NULL AUTO_INCREMENT,
         room_id BIGINT(20) UNSIGNED NOT NULL,
@@ -34,8 +27,10 @@ function chat_create_tables() {
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
         PRIMARY KEY (id),
         KEY room_id (room_id),
-        KEY user_id (user_id)
+        KEY user_id (user_id),
+        KEY created_at (created_at)
     ) $charset_collate;";
+
     $sql_members = "CREATE TABLE $table_members (
         room_id BIGINT(20) UNSIGNED NOT NULL,
         user_id BIGINT(20) UNSIGNED NOT NULL,
@@ -43,10 +38,31 @@ function chat_create_tables() {
         PRIMARY KEY (room_id, user_id),
         KEY user_id (user_id)
     ) $charset_collate;";
+
+    $sql_reactions = "CREATE TABLE $table_reactions (
+        id BIGINT(20) UNSIGNED NOT NULL AUTO_INCREMENT,
+        message_id BIGINT(20) UNSIGNED NOT NULL,
+        user_id BIGINT(20) UNSIGNED NOT NULL,
+        reaction VARCHAR(32) NOT NULL,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        PRIMARY KEY (id),
+        UNIQUE KEY message_user (message_id, user_id)
+    ) $charset_collate;";
+
+    $sql_read = "CREATE TABLE $table_read (
+        room_id BIGINT(20) UNSIGNED NOT NULL,
+        user_id BIGINT(20) UNSIGNED NOT NULL,
+        last_read_message_id BIGINT(20) UNSIGNED NOT NULL,
+        updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+        PRIMARY KEY (room_id, user_id)
+    ) $charset_collate;";
+
     require_once(ABSPATH . 'wp-admin/includes/upgrade.php');
     dbDelta($sql_rooms);
     dbDelta($sql_messages);
     dbDelta($sql_members);
+    dbDelta($sql_reactions);
+    dbDelta($sql_read);
 }
 
 function chat_upgrade_tables() {
@@ -56,7 +72,69 @@ function chat_upgrade_tables() {
     $wpdb->query("ALTER TABLE $table_messages ADD COLUMN deleted_at DATETIME NULL AFTER edited_at");
 }
 
-add_action('after_switch_theme', 'chat_create_tables');
+function chat_create_reactions_and_read_tables() {
+    global $wpdb;
+    $charset_collate = $wpdb->get_charset_collate();
+    $table_reactions = $wpdb->prefix . 'chat_reactions';
+    $table_read = $wpdb->prefix . 'chat_read_receipts';
+
+    $sql_reactions = "CREATE TABLE $table_reactions (
+        id BIGINT(20) UNSIGNED NOT NULL AUTO_INCREMENT,
+        message_id BIGINT(20) UNSIGNED NOT NULL,
+        user_id BIGINT(20) UNSIGNED NOT NULL,
+        reaction VARCHAR(32) NOT NULL,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        PRIMARY KEY (id),
+        UNIQUE KEY message_user (message_id, user_id)
+    ) $charset_collate;";
+
+    $sql_read = "CREATE TABLE $table_read (
+        room_id BIGINT(20) UNSIGNED NOT NULL,
+        user_id BIGINT(20) UNSIGNED NOT NULL,
+        last_read_message_id BIGINT(20) UNSIGNED NOT NULL,
+        updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+        PRIMARY KEY (room_id, user_id)
+    ) $charset_collate;";
+
+    require_once(ABSPATH . 'wp-admin/includes/upgrade.php');
+    dbDelta($sql_reactions);
+    dbDelta($sql_read);
+}
+
+add_action('admin_init', function() {
+    if (!get_option('chat_tables_created')) {
+        chat_create_tables();
+        update_option('chat_tables_created', 1);
+    }
+    if (get_option('chat_tables_created') && !get_option('chat_tables_upgraded')) {
+        chat_upgrade_tables();
+        update_option('chat_tables_upgraded', 1);
+    }
+    if (!get_option('chat_reactions_tables_created')) {
+        chat_create_reactions_and_read_tables();
+        update_option('chat_reactions_tables_created', 1);
+    }
+});
+
+add_action('after_switch_theme', function() {
+    chat_create_tables();
+    chat_upgrade_tables();
+    chat_create_reactions_and_read_tables();
+    update_option('chat_tables_created', 1);
+    update_option('chat_tables_upgraded', 1);
+    update_option('chat_reactions_tables_created', 1);
+});
+
+add_action('init', function() {
+    global $wpdb;
+    $table_reactions = $wpdb->prefix . 'chat_reactions';
+    $table_read = $wpdb->prefix . 'chat_read_receipts';
+    if ($wpdb->get_var("SHOW TABLES LIKE '$table_reactions'") != $table_reactions ||
+        $wpdb->get_var("SHOW TABLES LIKE '$table_read'") != $table_read) {
+        chat_create_reactions_and_read_tables();
+        update_option('chat_reactions_tables_created', 1);
+    }
+});
 
 function chat_create_room($name, $type, $created_by) {
     global $wpdb;
@@ -136,10 +214,10 @@ function chat_update_message($message_id, $new_message, $user_id) {
     global $wpdb;
     $table = $wpdb->prefix . 'chat_messages';
     $message = $wpdb->get_row($wpdb->prepare("SELECT * FROM $table WHERE id = %d", $message_id));
-    if (!$message || $message->user_id != $user_id) {
+    if (!$message || ($message->user_id != $user_id && !current_user_can('manage_options'))) {
         return false;
     }
-    return $wpdb->update(
+    $result = $wpdb->update(
         $table,
         array(
             'message'   => $new_message,
@@ -147,20 +225,28 @@ function chat_update_message($message_id, $new_message, $user_id) {
         ),
         array('id' => $message_id)
     );
+    if ($result === false) {
+        error_log('Chat update failed: ' . $wpdb->last_error);
+    }
+    return $result !== false;
 }
 
 function chat_delete_message($message_id, $user_id) {
     global $wpdb;
     $table = $wpdb->prefix . 'chat_messages';
     $message = $wpdb->get_row($wpdb->prepare("SELECT * FROM $table WHERE id = %d", $message_id));
-    if (!$message || $message->user_id != $user_id) {
+    if (!$message || ($message->user_id != $user_id && !current_user_can('manage_options'))) {
         return false;
     }
-    return $wpdb->update(
+    $result = $wpdb->update(
         $table,
         array('deleted_at' => current_time('mysql')),
         array('id' => $message_id)
     );
+    if ($result === false) {
+        error_log('Chat delete failed: ' . $wpdb->last_error);
+    }
+    return $result !== false;
 }
 
 function chat_get_direct_room($user1, $user2) {
@@ -200,5 +286,74 @@ function chat_get_users($search = '') {
          ORDER BY display_name ASC
          LIMIT 20",
         $like, $like, $like
+    ));
+}
+
+function chat_add_reaction($message_id, $user_id, $reaction) {
+    global $wpdb;
+    $table = $wpdb->prefix . 'chat_reactions';
+    $wpdb->replace($table, array(
+        'message_id' => $message_id,
+        'user_id' => $user_id,
+        'reaction' => $reaction
+    ));
+    return $wpdb->insert_id;
+}
+
+function chat_remove_reaction($message_id, $user_id) {
+    global $wpdb;
+    $table = $wpdb->prefix . 'chat_reactions';
+    return $wpdb->delete($table, array('message_id' => $message_id, 'user_id' => $user_id));
+}
+
+function chat_get_reactions_by_message($message_id) {
+    global $wpdb;
+    $table = $wpdb->prefix . 'chat_reactions';
+    return $wpdb->get_results($wpdb->prepare("SELECT * FROM $table WHERE message_id = %d", $message_id));
+}
+
+function chat_mark_read($room_id, $user_id, $last_message_id) {
+    global $wpdb;
+    $table = $wpdb->prefix . 'chat_read_receipts';
+    $wpdb->replace($table, array(
+        'room_id' => $room_id,
+        'user_id' => $user_id,
+        'last_read_message_id' => $last_message_id
+    ));
+}
+
+function chat_get_read_receipts($room_id) {
+    global $wpdb;
+    $table = $wpdb->prefix . 'chat_read_receipts';
+    return $wpdb->get_results($wpdb->prepare("SELECT * FROM $table WHERE room_id = %d", $room_id));
+}
+
+function chat_get_reactions_for_messages($message_ids) {
+    global $wpdb;
+    if (empty($message_ids)) return [];
+    $ids = implode(',', array_map('intval', $message_ids));
+    $table = $wpdb->prefix . 'chat_reactions';
+    $results = $wpdb->get_results("
+        SELECT message_id, reaction, COUNT(*) as count
+        FROM $table
+        WHERE message_id IN ($ids)
+        GROUP BY message_id, reaction
+    ");
+    $grouped = [];
+    foreach ($results as $row) {
+        $grouped[$row->message_id][] = (object) [
+            'reaction' => $row->reaction,
+            'count'    => (int)$row->count,
+        ];
+    }
+    return $grouped;
+}
+
+function chat_get_user_last_read($room_id, $user_id) {
+    global $wpdb;
+    $table = $wpdb->prefix . 'chat_read_receipts';
+    return $wpdb->get_var($wpdb->prepare(
+        "SELECT last_read_message_id FROM $table WHERE room_id = %d AND user_id = %d",
+        $room_id, $user_id
     ));
 }

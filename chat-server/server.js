@@ -29,6 +29,7 @@ function broadcastToAll(data) {
 
 wss.on('connection', (ws) => {
     ws.roomId = null;
+    ws.userId = null;
     ws.send(JSON.stringify({ type: 'system', message: 'Connected' }));
 
     ws.on('message', (data) => {
@@ -44,7 +45,16 @@ wss.on('connection', (ws) => {
                 }
                 roomClients.get(roomId).add(ws);
                 ws.roomId = roomId;
+                ws.userId = parsed.userId || null;
                 ws.send(JSON.stringify({ type: 'system', message: `Subscribed to room ${roomId}` }));
+            } else if (parsed.type === 'typing') {
+                if (ws.roomId) {
+                    broadcastToRoom(ws.roomId, { type: 'typing', data: { userId: ws.userId, userName: parsed.userName, isTyping: true } });
+                }
+            } else if (parsed.type === 'stop_typing') {
+                if (ws.roomId) {
+                    broadcastToRoom(ws.roomId, { type: 'typing', data: { userId: ws.userId, isTyping: false } });
+                }
             }
         } catch (e) {}
     });
@@ -85,6 +95,32 @@ app.post('/new-room', (req, res) => {
         return res.status(400).json({ error: 'No room data' });
     }
     broadcastToAll({ type: 'new_room', data: room });
+    res.json({ success: true });
+});
+
+app.post('/update-message', async (req, res) => {
+    const { message } = req.body;
+    if (!message) return res.status(400).json({ error: 'No message' });
+    broadcastToRoom(message.room_id, { type: 'update_message', data: message });
+    res.json({ success: true });
+});
+
+app.post('/delete-message', async (req, res) => {
+    const { message } = req.body;
+    if (!message) return res.status(400).json({ error: 'No message' });
+    broadcastToRoom(message.room_id, { type: 'delete_message', data: message });
+    res.json({ success: true });
+});
+
+app.post('/reaction', (req, res) => {
+    const { message_id, user_id, reaction, action } = req.body;
+    broadcastToAll({ type: 'reaction', data: { message_id, user_id, reaction, action } });
+    res.json({ success: true });
+});
+
+app.post('/read', (req, res) => {
+    const { room_id, user_id, last_message_id } = req.body;
+    broadcastToRoom(room_id, { type: 'read', data: { room_id, user_id, last_message_id } });
     res.json({ success: true });
 });
 

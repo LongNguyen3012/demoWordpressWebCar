@@ -24,6 +24,8 @@ services:
       WORDPRESS_DB_NAME: wordpress
       WORDPRESS_DB_USER: wpuser
       WORDPRESS_DB_PASSWORD: wppass
+      WORDPRESS_CONFIG_EXTRA: |
+        define('CHAT_NODE_SERVER_URL', 'http://chat-server:3000');
     volumes:
       - ./wp-content:/var/www/html/wp-content
 
@@ -49,7 +51,6 @@ services:
     environment:
       - WP_URL=http://wordpress:80
     restart: unless-stopped
-
 
 volumes:
   db_data: {}

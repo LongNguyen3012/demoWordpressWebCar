@@ -4,19 +4,47 @@ function chat_enqueue_scripts() {
     if (!is_page('chat')) {
         return;
     }
+
+    $js_dir = get_stylesheet_directory_uri() . '/assets/js/chat/';
+
     wp_enqueue_script(
-        'chat-js',
-        get_stylesheet_directory_uri() . '/assets/js/chat.js',
+        'chat-config',
+        $js_dir . 'config.js',
         array(),
-        '3.2',
+        '4.6',
         true
     );
-    wp_localize_script('chat-js', 'chatSettings', array(
+
+    wp_localize_script('chat-config', 'chatSettings', array(
         'restUrl'      => rest_url('mytheme/v1/chat'),
         'nonce'        => wp_create_nonce('wp_rest'),
         'websocketUrl' => defined('CHAT_WS_URL') ? CHAT_WS_URL : 'ws://localhost:8080',
         'userId'       => get_current_user_id(),
         'userName'     => wp_get_current_user()->display_name,
-        'isAdmin'      => current_user_can('manage_options'),
+        'isAdmin'      => current_user_can('manage_options') ? '1' : '0',
     ));
+
+    wp_enqueue_script(
+        'chat-api',
+        $js_dir . 'api.js',
+        array('chat-config'),
+        '4.6',
+        true
+    );
+
+    wp_enqueue_script(
+        'chat-ui',
+        $js_dir . 'ui.js',
+        array('chat-config'),
+        '4.6',
+        true
+    );
+
+    wp_enqueue_script(
+        'chat-app',
+        $js_dir . 'app.js',
+        array('chat-config', 'chat-api', 'chat-ui'),
+        '4.6',
+        true
+    );
 }
