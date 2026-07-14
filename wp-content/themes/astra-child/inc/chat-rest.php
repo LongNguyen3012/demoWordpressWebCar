@@ -62,6 +62,13 @@ function chat_register_routes() {
         'callback' => 'chat_rest_mark_read',
         'permission_callback' => 'chat_rest_require_login'
     ));
+
+    // Direct message route
+    register_rest_route('mytheme/v1', '/chat/direct/(?P<user_id>\d+)', array(
+        'methods'  => 'GET',
+        'callback' => 'chat_rest_get_direct_room',
+        'permission_callback' => 'chat_rest_require_login'
+    ));
 }
 
 function chat_rest_require_login() {
@@ -269,20 +276,62 @@ function chat_rest_get_single_message($request) {
     return rest_ensure_response($message);
 }
 
+function chat_rest_get_direct_room($request) {
+    $user_id = get_current_user_id();
+    $other_user_id = (int) $request->get_param('user_id');
+    if (!$other_user_id || $other_user_id == $user_id) {
+        return new WP_Error('invalid_user', 'Invalid user', array('status' => 400));
+    }
+    $room_id = chat_get_direct_room($user_id, $other_user_id);
+    if (!$room_id) {
+        return new WP_Error('db_error', 'Could not create room', array('status' => 500));
+    }
+    global $wpdb;
+    $room = $wpdb->get_row($wpdb->prepare("SELECT * FROM {$wpdb->prefix}chat_rooms WHERE id = %d", $room_id));
+    return rest_ensure_response($room);
+}
+
+// ----------------------------------------------------------------------
+// FIXED NOTIFICATION FUNCTIONS – using base URL + endpoint
+// ----------------------------------------------------------------------
+
 function chat_notify_websocket_server($message_id) {
-    $node_url = defined('CHAT_NODE_SERVER_URL') ? CHAT_NODE_SERVER_URL : 'http://localhost:3000/new-message';
+    global $wpdb;
+    $table = $wpdb->prefix . 'chat_messages';
+    $message = $wpdb->get_row($wpdb->prepare(
+        "SELECT m.*, u.display_name as user_name
+         FROM $table m
+         JOIN {$wpdb->users} u ON m.user_id = u.ID
+         WHERE m.id = %d",
+        $message_id
+    ));
+    if (!$message) {
+        error_log('[chat] No message found for ID ' . $message_id);
+        return;
+    }
+
+    $base = defined('CHAT_NODE_SERVER_URL') ? CHAT_NODE_SERVER_URL : 'http://localhost:3000';
+    $node_url = $base . '/new-message';
+    error_log('[chat] Sending to Node at: ' . $node_url);
+
     $response = wp_remote_post($node_url, array(
-        'body'    => json_encode(array('message_id' => $message_id)),
+        'body'    => json_encode(array('message' => $message)),
         'headers' => array('Content-Type' => 'application/json'),
         'timeout' => 0.5,
     ));
+
     if (is_wp_error($response)) {
-        error_log('New message notification failed: ' . $response->get_error_message());
+        error_log('[chat] Node request FAILED: ' . $response->get_error_message());
+    } else {
+        $code = wp_remote_retrieve_response_code($response);
+        $body = wp_remote_retrieve_body($response);
+        error_log('[chat] Node response: HTTP ' . $code . ' - ' . $body);
     }
 }
 
 function chat_notify_websocket_new_room($room_data) {
-    $node_url = defined('CHAT_NODE_SERVER_URL') ? CHAT_NODE_SERVER_URL : 'http://localhost:3000/new-room';
+    $base = defined('CHAT_NODE_SERVER_URL') ? CHAT_NODE_SERVER_URL : 'http://localhost:3000';
+    $node_url = $base . '/new-room';
     $response = wp_remote_post($node_url, array(
         'body'    => json_encode(array('room' => $room_data)),
         'headers' => array('Content-Type' => 'application/json'),
@@ -294,7 +343,8 @@ function chat_notify_websocket_new_room($room_data) {
 }
 
 function chat_notify_websocket_update_message($message) {
-    $node_url = defined('CHAT_NODE_SERVER_URL') ? CHAT_NODE_SERVER_URL : 'http://localhost:3000/update-message';
+    $base = defined('CHAT_NODE_SERVER_URL') ? CHAT_NODE_SERVER_URL : 'http://localhost:3000';
+    $node_url = $base . '/update-message';
     $response = wp_remote_post($node_url, array(
         'body'    => json_encode(array('message' => $message)),
         'headers' => array('Content-Type' => 'application/json'),
@@ -306,7 +356,8 @@ function chat_notify_websocket_update_message($message) {
 }
 
 function chat_notify_websocket_delete_message($message) {
-    $node_url = defined('CHAT_NODE_SERVER_URL') ? CHAT_NODE_SERVER_URL : 'http://localhost:3000/delete-message';
+    $base = defined('CHAT_NODE_SERVER_URL') ? CHAT_NODE_SERVER_URL : 'http://localhost:3000';
+    $node_url = $base . '/delete-message';
     $response = wp_remote_post($node_url, array(
         'body'    => json_encode(array('message' => $message)),
         'headers' => array('Content-Type' => 'application/json'),
@@ -314,6 +365,32 @@ function chat_notify_websocket_delete_message($message) {
     ));
     if (is_wp_error($response)) {
         error_log('Delete message notification failed: ' . $response->get_error_message());
+    }
+}
+
+function chat_notify_websocket_reaction($message_id, $user_id, $reaction, $action) {
+    $base = defined('CHAT_NODE_SERVER_URL') ? CHAT_NODE_SERVER_URL : 'http://localhost:3000';
+    $node_url = $base . '/reaction';
+    $response = wp_remote_post($node_url, array(
+        'body'    => json_encode(array('message_id' => $message_id, 'user_id' => $user_id, 'reaction' => $reaction, 'action' => $action)),
+        'headers' => array('Content-Type' => 'application/json'),
+        'timeout' => 0.5,
+    ));
+    if (is_wp_error($response)) {
+        error_log('Reaction notification failed: ' . $response->get_error_message());
+    }
+}
+
+function chat_notify_websocket_read($room_id, $user_id, $last_message_id) {
+    $base = defined('CHAT_NODE_SERVER_URL') ? CHAT_NODE_SERVER_URL : 'http://localhost:3000';
+    $node_url = $base . '/read';
+    $response = wp_remote_post($node_url, array(
+        'body'    => json_encode(array('room_id' => $room_id, 'user_id' => $user_id, 'last_message_id' => $last_message_id)),
+        'headers' => array('Content-Type' => 'application/json'),
+        'timeout' => 0.5,
+    ));
+    if (is_wp_error($response)) {
+        error_log('Read receipt notification failed: ' . $response->get_error_message());
     }
 }
 
@@ -369,28 +446,4 @@ function chat_rest_mark_read($request) {
     chat_mark_read($room_id, $user_id, $last_message_id);
     chat_notify_websocket_read($room_id, $user_id, $last_message_id);
     return rest_ensure_response(array('success' => true));
-}
-
-function chat_notify_websocket_reaction($message_id, $user_id, $reaction, $action) {
-    $node_url = defined('CHAT_NODE_SERVER_URL') ? CHAT_NODE_SERVER_URL : 'http://localhost:3000/reaction';
-    $response = wp_remote_post($node_url, array(
-        'body'    => json_encode(array('message_id' => $message_id, 'user_id' => $user_id, 'reaction' => $reaction, 'action' => $action)),
-        'headers' => array('Content-Type' => 'application/json'),
-        'timeout' => 0.5,
-    ));
-    if (is_wp_error($response)) {
-        error_log('Reaction notification failed: ' . $response->get_error_message());
-    }
-}
-
-function chat_notify_websocket_read($room_id, $user_id, $last_message_id) {
-    $node_url = defined('CHAT_NODE_SERVER_URL') ? CHAT_NODE_SERVER_URL : 'http://localhost:3000/read';
-    $response = wp_remote_post($node_url, array(
-        'body'    => json_encode(array('room_id' => $room_id, 'user_id' => $user_id, 'last_message_id' => $last_message_id)),
-        'headers' => array('Content-Type' => 'application/json'),
-        'timeout' => 0.5,
-    ));
-    if (is_wp_error($response)) {
-        error_log('Read receipt notification failed: ' . $response->get_error_message());
-    }
 }

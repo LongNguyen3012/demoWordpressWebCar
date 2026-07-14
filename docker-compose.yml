@@ -21,11 +21,12 @@ services:
       - "8081:80"
     environment:
       WORDPRESS_DB_HOST: db:3306
-      WORDPRESS_DB_NAME: wordpress
+      WORDPLUGIN_DB_NAME: wordpress
       WORDPRESS_DB_USER: wpuser
       WORDPRESS_DB_PASSWORD: wppass
       WORDPRESS_CONFIG_EXTRA: |
         define('CHAT_NODE_SERVER_URL', 'http://chat-server:3000');
+        define('CHAT_WS_URL', 'ws://localhost:8080');
     volumes:
       - ./wp-content:/var/www/html/wp-content
 

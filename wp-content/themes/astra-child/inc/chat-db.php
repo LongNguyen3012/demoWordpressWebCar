@@ -261,9 +261,13 @@ function chat_get_direct_room($user1, $user2) {
             HAVING COUNT(DISTINCT m1.user_id) = 2 AND COUNT(DISTINCT m2.user_id) = 2";
     $room_id = $wpdb->get_var($wpdb->prepare($sql, $user1, $user2));
     if ($room_id) return (int)$room_id;
-    $room_id = chat_create_room('', 'direct', $user1);
+    $other_user = get_userdata($user2);
+    $name = $other_user ? $other_user->display_name : 'Direct';
+    $room_id = chat_create_room($name, 'direct', $user1);
     chat_add_member($room_id, $user1);
     chat_add_member($room_id, $user2);
+    $room_data = array('id' => $room_id, 'name' => $name, 'type' => 'direct', 'created_by' => $user1);
+    chat_notify_websocket_new_room($room_data);
     return $room_id;
 }
 

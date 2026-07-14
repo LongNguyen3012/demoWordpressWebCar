@@ -205,7 +205,42 @@ get_header();
         </div>
     </section>
 
-</div>
+    <!-- ===== NEW GAME CTA SECTION (Option A) ===== -->
+    <?php
+    // Ensure the helper function exists (fallback if not defined)
+    if (!function_exists('get_game_page_url')) {
+        function get_game_page_url() {
+            $pages = get_pages(array(
+                'meta_key'   => '_wp_page_template',
+                'meta_value' => 'page-game.php',
+                'number'     => 1,
+            ));
+            if (!empty($pages)) {
+                return get_permalink($pages[0]->ID);
+            }
+            $slug_page = get_page_by_path('driving-game');
+            if ($slug_page) {
+                return get_permalink($slug_page);
+            }
+            $slug_page = get_page_by_path('game');
+            if ($slug_page) {
+                return get_permalink($slug_page);
+            }
+            return '#';
+        }
+    }
+    ?>
+    <section class="game-cta-section">
+        <div class="container" style="text-align:center; padding:60px 20px; background:#f0f0f0; border-radius:8px; margin:40px 0;">
+            <h2 style="font-size:2rem; margin-bottom:20px;"><?php _te('game_cta_title', 'Ready for a Midnight Drive?'); ?></h2>
+            <p style="font-size:1.2rem; margin-bottom:30px; color:#555;"><?php _te('game_cta_desc', 'Test your reflexes in our fast‑paced driving game. How far can you go?'); ?></p>
+            <a href="<?php echo esc_url(get_game_page_url()); ?>" class="btn-primary" style="padding:16px 50px; font-size:1.2rem; text-transform:uppercase; letter-spacing:2px; background:#2C2C2C; color:#fff; text-decoration:none; border-radius:6px; display:inline-block;">
+                <?php _te('game_play_now', 'Play Now →'); ?>
+            </a>
+        </div>
+    </section>
+
+</div><!-- .custom-homepage -->
 
 <?php
 get_footer();

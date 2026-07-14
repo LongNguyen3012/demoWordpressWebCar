@@ -183,4 +183,16 @@ return [
     'chat_type_message' => 'Nhập tin nhắn...',
     'chat_send' => 'Gửi',
 
+    //game
+    'game_title' => 'Lái Xe Đêm',
+    'game_score' => 'Điểm',
+    'game_over' => 'Kết Thúc',
+    'game_final_score' => 'Điểm Cuối',
+    'game_restart' => 'Chơi Lại',
+    'game_cta_title' => 'Sẵn sàng cho chuyến lái xe đêm?',
+    'game_cta_desc'  => 'Thử phản xạ của bạn trong trò chơi lái xe tốc độ. Bạn có thể đi được bao xa?',
+    'game_play_now'  => 'Chơi ngay →',
+    'game_speed' => 'Tốc độ',
+    'game_top_speed' => 'Tốc độ tối đa',
+
     ];

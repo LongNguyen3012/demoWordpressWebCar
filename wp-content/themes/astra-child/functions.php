@@ -22,8 +22,12 @@ function initialize_custom_languages() {
     }
 }
 
-define('CHAT_NODE_SERVER_URL', 'http://chat-server:3000/new-message');
-define('CHAT_WS_URL', 'ws://localhost:8080');
+if ( ! defined( 'CHAT_NODE_SERVER_URL' ) ) {
+    define( 'CHAT_NODE_SERVER_URL', 'http://chat-server:3000' );
+}
+if ( ! defined( 'CHAT_WS_URL' ) ) {
+    define( 'CHAT_WS_URL', 'ws://localhost:8080' );
+}
 
 define( 'ASTRA_CHILD_INC_DIR', __DIR__ . '/inc/' );
 
@@ -51,6 +55,7 @@ require_once ASTRA_CHILD_INC_DIR . 'chat-rest.php';
 require_once ASTRA_CHILD_INC_DIR . 'chat-enqueue.php';
 
 require_once ASTRA_CHILD_INC_DIR . 'email-verification.php';
+require_once ASTRA_CHILD_INC_DIR . 'game-enqueue.php';
 
 require_once ASTRA_CHILD_INC_DIR . 'nav-menu-custom.php';
 

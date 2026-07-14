@@ -11,7 +11,9 @@ class ChatApp {
         this.messageLoadTimeout = null;
         this._currentLoadRoomId = null;
         this._userReactions = {};
-        this._pendingReactions = {};
+        this._reactionControllers = {};
+        this.heartbeatInterval = null;
+        this.reconnectAttempts = 0;
 
         this.activeRoomId = localStorage.getItem('chat_active_room') ? parseInt(localStorage.getItem('chat_active_room')) : null;
 
@@ -28,33 +30,72 @@ class ChatApp {
 
     connectWebSocket() {
         this.ws = new WebSocket(this.config.websocketUrl);
-        this.ws.onopen = function() { console.log('Connected to chat server'); };
-        this.ws.onmessage = function(event) { this.handleWebSocketMessage(event); }.bind(this);
-        this.ws.onerror = function(error) { console.error('WebSocket error:', error); };
-        this.ws.onclose = function() {
-            setTimeout(function() { this.connectWebSocket(); }.bind(this), 3000);
+        this.ws.onopen = function() {
+            console.log('Connected to chat server');
+            if (this.heartbeatInterval) {
+                clearInterval(this.heartbeatInterval);
+            }
+            this.heartbeatInterval = setInterval(() => {
+                if (this.ws && this.ws.readyState === WebSocket.OPEN && this.currentRoomId) {
+                    this.ws.send(JSON.stringify({ type: 'ping', roomId: this.currentRoomId }));
+                }
+            }, 25000);
+
+            if (this.currentRoomId) {
+                console.log('Re-subscribing to room', this.currentRoomId);
+                this.subscribeToRoom(this.currentRoomId);
+            }
+            this.reconnectAttempts = 0;
+        }.bind(this);
+
+        this.ws.onmessage = function(event) {
+            this.handleWebSocketMessage(event);
+        }.bind(this);
+
+        this.ws.onerror = function(error) {
+            console.error('WebSocket error:', error);
+        };
+
+        this.ws.onclose = function(event) {
+            console.log('WebSocket closed, code:', event.code, 'reason:', event.reason);
+            if (this.heartbeatInterval) {
+                clearInterval(this.heartbeatInterval);
+                this.heartbeatInterval = null;
+            }
+            const delay = Math.min(3000 + this.reconnectAttempts * 1000, 10000);
+            this.reconnectAttempts++;
+            setTimeout(function() {
+                this.connectWebSocket();
+            }.bind(this), delay);
         }.bind(this);
     }
 
     handleWebSocketMessage(event) {
         var data = JSON.parse(event.data);
+        console.log('[WS] Raw message received:', data);
+
         switch (data.type) {
             case 'new_message':
-                if (data.data.room_id === this.currentRoomId) {
+                console.log('[WS] New message:', data.data);
+                console.log('[WS] Current room:', this.currentRoomId);
+                console.log('[WS] Message room:', data.data.room_id);
+                if (parseInt(data.data.room_id) === parseInt(this.currentRoomId)) {
                     this.appendMessage(data.data);
                     this.markRoomRead(this.currentRoomId);
+                } else {
+                    console.warn('[WS] Room mismatch – ignoring');
                 }
                 break;
             case 'new_room':
                 this.loadRooms();
                 break;
             case 'update_message':
-                if (data.data.room_id === this.currentRoomId) {
+                if (parseInt(data.data.room_id) === parseInt(this.currentRoomId)) {
                     this.updateMessageElement(data.data);
                 }
                 break;
             case 'delete_message':
-                if (data.data.room_id === this.currentRoomId) {
+                if (parseInt(data.data.room_id) === parseInt(this.currentRoomId)) {
                     this.removeMessageElement(data.data.id, data.data);
                 }
                 break;
@@ -62,19 +103,27 @@ class ChatApp {
                 this.ui.showTypingIndicator(data.data);
                 break;
             case 'read':
-                this.ui.updateReadReceipts(data.data);
+                console.log('[WS] Read receipt:', data.data);
+                this.ui.markMessagesRead(data.data.room_id, data.data.user_id, data.data.last_message_id);
                 break;
             case 'reaction':
                 this.ui.updateReaction(data.data);
                 break;
+            default:
+                console.log('[WS] Unknown message type:', data.type);
         }
     }
 
     subscribeToRoom(roomId) {
+        console.log('[WS] Subscribing to room:', roomId);
         if (this.ws && this.ws.readyState === WebSocket.OPEN) {
             this.ws.send(JSON.stringify({ type: 'subscribe', roomId: roomId, userId: this.config.userId }));
+            console.log('[WS] Subscribe message sent');
+        } else {
+            console.warn('[WS] WebSocket not open, cannot subscribe');
         }
         this.currentRoomId = roomId;
+        this.ui.currentRoomId = roomId;
         localStorage.setItem('chat_active_room', roomId);
     }
 
@@ -253,39 +302,53 @@ class ChatApp {
     }
 
     async toggleReaction(messageId, reaction) {
-        if (this._pendingReactions[messageId]) {
-            return;
+        if (this._reactionControllers[messageId]) {
+            this._reactionControllers[messageId].abort();
+            delete this._reactionControllers[messageId];
         }
-        this._pendingReactions[messageId] = true;
 
+        var current = this._userReactions[messageId];
+        var willAdd = (current !== reaction);
+
+        var msgDiv = this.ui.elements.messages.querySelector('div[data-message-id="' + messageId + '"]');
+        if (!msgDiv) return;
+
+        if (!this.ui.reactionMap[messageId]) this.ui.reactionMap[messageId] = {};
+        if (!this.ui.reactionMap[messageId][reaction]) {
+            this.ui.reactionMap[messageId][reaction] = new Set();
+        }
+        if (willAdd) {
+            if (current) {
+                this.ui.reactionMap[messageId][current].delete(this.config.userId);
+                if (this.ui.reactionMap[messageId][current].size === 0) {
+                    delete this.ui.reactionMap[messageId][current];
+                }
+            }
+            this.ui.reactionMap[messageId][reaction].add(this.config.userId);
+            this._userReactions[messageId] = reaction;
+        } else {
+            this.ui.reactionMap[messageId][reaction].delete(this.config.userId);
+            if (this.ui.reactionMap[messageId][reaction].size === 0) {
+                delete this.ui.reactionMap[messageId][reaction];
+            }
+            delete this._userReactions[messageId];
+        }
+        this.ui.renderReactions(msgDiv, messageId);
+
+        var controller = new AbortController();
+        this._reactionControllers[messageId] = controller;
         try {
-            var current = this._userReactions[messageId];
-            var willAdd = (current !== reaction);
+            await new Promise((resolve, reject) => {
+                var timeout = setTimeout(() => {
+                    resolve();
+                }, 50);
+                controller.signal.addEventListener('abort', function() {
+                    clearTimeout(timeout);
+                    reject(new Error('Aborted'));
+                });
+            });
 
-            var msgDiv = this.ui.elements.messages.querySelector('div[data-message-id="' + messageId + '"]');
-            if (!msgDiv) return;
-
-            if (!this.ui.reactionMap[messageId]) this.ui.reactionMap[messageId] = {};
-            if (!this.ui.reactionMap[messageId][reaction]) {
-                this.ui.reactionMap[messageId][reaction] = new Set();
-            }
-            if (willAdd) {
-                if (current) {
-                    this.ui.reactionMap[messageId][current].delete(this.config.userId);
-                    if (this.ui.reactionMap[messageId][current].size === 0) {
-                        delete this.ui.reactionMap[messageId][current];
-                    }
-                }
-                this.ui.reactionMap[messageId][reaction].add(this.config.userId);
-                this._userReactions[messageId] = reaction;
-            } else {
-                this.ui.reactionMap[messageId][reaction].delete(this.config.userId);
-                if (this.ui.reactionMap[messageId][reaction].size === 0) {
-                    delete this.ui.reactionMap[messageId][reaction];
-                }
-                delete this._userReactions[messageId];
-            }
-            this.ui.renderReactions(msgDiv, messageId);
+            if (controller.signal.aborted) return;
 
             if (willAdd) {
                 await this.api.addReaction(messageId, reaction);
@@ -293,14 +356,13 @@ class ChatApp {
                 await this.api.removeReaction(messageId, reaction);
             }
         } catch (err) {
-            if (err.message && err.message.toLowerCase().includes('not found')) {
-                return;
-            }
+            if (err.message === 'Aborted') return;
+            if (err.message && err.message.toLowerCase().includes('not found')) return;
             console.error('Reaction error:', err);
             this.ui.showError('Failed to update reaction');
             this.loadMessages(this.currentRoomId);
         } finally {
-            delete this._pendingReactions[messageId];
+            delete this._reactionControllers[messageId];
         }
     }
 

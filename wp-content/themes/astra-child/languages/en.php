@@ -183,4 +183,16 @@ return [
     'chat_type_message' => 'Type a message...',
     'chat_send' => 'Send',
 
+    //game
+    'game_title' => 'Midnight Drive',
+    'game_score' => 'Score',
+    'game_over' => 'Game Over',
+    'game_final_score' => 'Final Score',
+    'game_restart' => 'Restart',
+    'game_cta_title' => 'Ready for a Midnight Drive?',
+    'game_cta_desc'  => 'Test your reflexes in our fast‑paced driving game. How far can you go?',
+    'game_play_now'  => 'Play Now →',
+    'game_speed' => 'Speed',
+    'game_top_speed' => 'Top Speed',
+
 ];

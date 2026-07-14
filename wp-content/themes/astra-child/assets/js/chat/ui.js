@@ -6,6 +6,7 @@ class ChatUI {
             sendButton: document.getElementById('send-btn'),
             roomList: document.getElementById('rooms'),
             newRoomBtn: document.getElementById('new-room-btn'),
+            newDirectBtn: document.getElementById('new-direct-btn'),
             roomHeader: document.getElementById('room-header'),
         };
         this.elements.messages.style.paddingTop = '40px';
@@ -13,6 +14,7 @@ class ChatUI {
         this.reactionMap = {};
         this._typingTimeout = null;
         this.userId = window.ChatConfig ? window.ChatConfig.userId : null;
+        this.currentRoomId = null;
     }
 
     escHtml(text) {
@@ -38,7 +40,11 @@ class ChatUI {
         this.elements.roomList.innerHTML = '';
         rooms.forEach(function(room) {
             var li = document.createElement('li');
-            li.textContent = room.name || 'Room ' + room.id;
+            var label = room.name || 'Room ' + room.id;
+            if (room.type === 'direct') {
+                label = '💬 ' + label;
+            }
+            li.textContent = label;
             li.dataset.roomId = room.id;
             li.className = 'room-item';
             li.style.cssText = 'cursor:pointer; padding:8px 12px; margin:4px 0; border-radius:6px; transition:all 0.2s; border-left:5px solid transparent; background:transparent; font-weight:normal;';
@@ -104,6 +110,40 @@ class ChatUI {
             this.elements.messages.appendChild(readDiv);
         }
         readDiv.textContent = '✓ Seen';
+    }
+
+    markMessagesRead(roomId, userId, lastMessageId) {
+        if (parseInt(userId) === parseInt(this.userId)) return;
+        if (parseInt(roomId) !== parseInt(this.currentRoomId)) return;
+
+        var messages = this.elements.messages.querySelectorAll('div[data-message-id]');
+        var ownMessages = [];
+        messages.forEach(function(div) {
+            var senderId = parseInt(div.dataset.userId);
+            if (senderId === this.userId) {
+                ownMessages.push(div);
+            }
+        }.bind(this));
+
+        ownMessages.sort(function(a, b) {
+            return parseInt(b.dataset.messageId) - parseInt(a.dataset.messageId);
+        });
+
+        ownMessages.forEach(function(div) {
+            var statusSpan = div.querySelector('.read-status');
+            if (statusSpan) {
+                statusSpan.remove();
+            }
+        });
+
+        if (ownMessages.length > 0) {
+            var latestDiv = ownMessages[0];
+            var statusSpan = document.createElement('span');
+            statusSpan.className = 'read-status';
+            statusSpan.style.cssText = 'margin-left:8px; font-size:0.8rem; color:#4fc3f7;';
+            statusSpan.textContent = '✓✓';
+            latestDiv.appendChild(statusSpan);
+        }
     }
 
     markMessagesReadUpTo(lastReadMessageId) {
@@ -213,6 +253,7 @@ class ChatUI {
     appendMessage(msg, userId, isAdmin, onEdit, onDelete, onReaction) {
         var div = document.createElement('div');
         div.dataset.messageId = msg.id;
+        div.dataset.userId = msg.user_id;
         div.style.marginBottom = '12px';
         div.style.position = 'relative';
         div.style.padding = '4px 8px';
@@ -319,6 +360,8 @@ class ChatUI {
         var div = this.elements.messages.querySelector('div[data-message-id="' + msg.id + '"]');
         if (!div) return;
 
+        div.dataset.userId = msg.user_id;
+
         var time = new Date(msg.created_at).toLocaleTimeString();
         var content = msg.message;
         if (msg.deleted_at) {
@@ -338,6 +381,11 @@ class ChatUI {
         var actions = canEdit && !msg.deleted_at ? '<span style="float:right;font-size:0.8rem;"><a href="#" class="chat-edit" data-id="' + msg.id + '" style="margin-right:5px;">✎</a><a href="#" class="chat-delete" data-id="' + msg.id + '">✕</a></span>' : '';
 
         div.innerHTML = '<strong>' + this.escHtml(msg.user_name) + '</strong> <span style="color:#999;font-size:0.8rem;">' + time + '</span>' + actions + ': ' + content;
+
+        var existingStatus = div.querySelector('.read-status');
+        if (existingStatus) {
+            existingStatus.remove();
+        }
 
         var reactionBar = div.querySelector('.reaction-bar');
         if (!reactionBar) {
@@ -518,6 +566,7 @@ class ChatUI {
         text = text.replace(/✎✕/g, '');
         text = text.replace(/\(edited\)/g, '');
         text = text.replace(/\(Deleted\)/g, '');
+        text = text.replace(/✓✓?/g, '');
         return text.trim();
     }
 
