@@ -143,3 +143,25 @@ function add_account_menu_item($items, $args) {
 
     return $items;
 }
+
+add_filter('wp_nav_menu_items', 'add_notification_bell_menu_item', 9, 2); // priority before account (10)
+function add_notification_bell_menu_item($items, $args) {
+    if ($args->theme_location !== 'primary') {
+        return $items;
+    }
+    if (!is_user_logged_in()) {
+        return $items;
+    }
+
+    $bell = '<li id="notification-bell-wrapper" class="menu-item" style="position:relative;">';
+    $bell .= '<a id="notification-bell" href="#" style="font-size:1.4rem; position:relative; text-decoration:none; color:#333;">🔔';
+    $bell .= '<span id="notification-badge" style="display:none; position:absolute; top:-8px; right:-8px; background:#d63638; color:#fff; border-radius:50%; padding:2px 6px; font-size:0.7rem; font-weight:bold; min-width:18px; text-align:center;"></span>';
+    $bell .= '</a>';
+    $bell .= '<div id="notification-dropdown" style="display:none; position:absolute; top:100%; right:0; width:360px; max-height:400px; overflow-y:auto; background:#fff; border:1px solid #ddd; border-radius:4px; box-shadow:0 4px 12px rgba(0,0,0,0.15); z-index:9999;">';
+    $bell .= '<ul id="notification-list" style="list-style:none; margin:0; padding:0;"></ul>';
+    $bell .= '</div>';
+    $bell .= '</li>';
+
+
+    return $items . $bell;
+}

@@ -194,5 +194,9 @@ return [
     'game_play_now'  => 'Chơi ngay →',
     'game_speed' => 'Tốc độ',
     'game_top_speed' => 'Tốc độ tối đa',
-
-    ];
+    //noti
+    'notification_new_message' => '%s đã gửi tin nhắn',
+    'notification_invited' => '%s đã mời bạn tham gia "%s"',
+    'notification_left' => '%s đã rời khỏi phòng "%s"',
+    
+];

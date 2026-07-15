@@ -7,6 +7,7 @@ function chat_create_tables() {
     $table_members = $wpdb->prefix . 'chat_room_members';
     $table_reactions = $wpdb->prefix . 'chat_reactions';
     $table_read = $wpdb->prefix . 'chat_read_receipts';
+    $table_notifications = $wpdb->prefix . 'chat_notifications';
 
     $sql_rooms = "CREATE TABLE $table_rooms (
         id BIGINT(20) UNSIGNED NOT NULL AUTO_INCREMENT,
@@ -57,12 +58,26 @@ function chat_create_tables() {
         PRIMARY KEY (room_id, user_id)
     ) $charset_collate;";
 
+    $sql_notifications = "CREATE TABLE $table_notifications (
+        id BIGINT(20) UNSIGNED NOT NULL AUTO_INCREMENT,
+        user_id BIGINT(20) UNSIGNED NOT NULL,
+        type VARCHAR(50) NOT NULL DEFAULT 'message',
+        content TEXT NOT NULL,
+        link VARCHAR(255) DEFAULT '',
+        is_read TINYINT(1) DEFAULT 0,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        PRIMARY KEY (id),
+        KEY user_id (user_id),
+        KEY is_read (is_read)
+    ) $charset_collate;";
+
     require_once(ABSPATH . 'wp-admin/includes/upgrade.php');
     dbDelta($sql_rooms);
     dbDelta($sql_messages);
     dbDelta($sql_members);
     dbDelta($sql_reactions);
     dbDelta($sql_read);
+    dbDelta($sql_notifications);
 }
 
 function chat_upgrade_tables() {
@@ -77,6 +92,7 @@ function chat_create_reactions_and_read_tables() {
     $charset_collate = $wpdb->get_charset_collate();
     $table_reactions = $wpdb->prefix . 'chat_reactions';
     $table_read = $wpdb->prefix . 'chat_read_receipts';
+    $table_notifications = $wpdb->prefix . 'chat_notifications';
 
     $sql_reactions = "CREATE TABLE $table_reactions (
         id BIGINT(20) UNSIGNED NOT NULL AUTO_INCREMENT,
@@ -96,9 +112,23 @@ function chat_create_reactions_and_read_tables() {
         PRIMARY KEY (room_id, user_id)
     ) $charset_collate;";
 
+    $sql_notifications = "CREATE TABLE $table_notifications (
+        id BIGINT(20) UNSIGNED NOT NULL AUTO_INCREMENT,
+        user_id BIGINT(20) UNSIGNED NOT NULL,
+        type VARCHAR(50) NOT NULL DEFAULT 'message',
+        content TEXT NOT NULL,
+        link VARCHAR(255) DEFAULT '',
+        is_read TINYINT(1) DEFAULT 0,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        PRIMARY KEY (id),
+        KEY user_id (user_id),
+        KEY is_read (is_read)
+    ) $charset_collate;";
+
     require_once(ABSPATH . 'wp-admin/includes/upgrade.php');
     dbDelta($sql_reactions);
     dbDelta($sql_read);
+    dbDelta($sql_notifications);
 }
 
 add_action('admin_init', function() {
@@ -129,8 +159,10 @@ add_action('init', function() {
     global $wpdb;
     $table_reactions = $wpdb->prefix . 'chat_reactions';
     $table_read = $wpdb->prefix . 'chat_read_receipts';
+    $table_notifications = $wpdb->prefix . 'chat_notifications';
     if ($wpdb->get_var("SHOW TABLES LIKE '$table_reactions'") != $table_reactions ||
-        $wpdb->get_var("SHOW TABLES LIKE '$table_read'") != $table_read) {
+        $wpdb->get_var("SHOW TABLES LIKE '$table_read'") != $table_read ||
+        $wpdb->get_var("SHOW TABLES LIKE '$table_notifications'") != $table_notifications) {
         chat_create_reactions_and_read_tables();
         update_option('chat_reactions_tables_created', 1);
     }
@@ -253,12 +285,14 @@ function chat_get_direct_room($user1, $user2) {
     global $wpdb;
     $table_rooms = $wpdb->prefix . 'chat_rooms';
     $table_members = $wpdb->prefix . 'chat_room_members';
-    $sql = "SELECT r.id FROM $table_rooms r
-            JOIN $table_members m1 ON r.id = m1.room_id AND m1.user_id = %d
-            JOIN $table_members m2 ON r.id = m2.room_id AND m2.user_id = %d
+    $sql = "SELECT r.id
+            FROM $table_rooms r
+            JOIN $table_members m ON r.id = m.room_id
             WHERE r.type = 'direct'
             GROUP BY r.id
-            HAVING COUNT(DISTINCT m1.user_id) = 2 AND COUNT(DISTINCT m2.user_id) = 2";
+            HAVING COUNT(m.user_id) = 2
+            AND SUM(m.user_id = %d) = 1
+            AND SUM(m.user_id = %d) = 1";
     $room_id = $wpdb->get_var($wpdb->prepare($sql, $user1, $user2));
     if ($room_id) return (int)$room_id;
     $other_user = get_userdata($user2);
@@ -360,4 +394,38 @@ function chat_get_user_last_read($room_id, $user_id) {
         "SELECT last_read_message_id FROM $table WHERE room_id = %d AND user_id = %d",
         $room_id, $user_id
     ));
+}
+
+function chat_remove_member($room_id, $user_id) {
+    global $wpdb;
+    return $wpdb->delete($wpdb->prefix . 'chat_room_members', array('room_id' => $room_id, 'user_id' => $user_id));
+}
+
+function chat_create_notification($user_id, $type, $content, $link = '') {
+    global $wpdb;
+    $table = $wpdb->prefix . 'chat_notifications';
+    $wpdb->insert(
+        $table,
+        array(
+            'user_id'    => $user_id,
+            'type'       => $type,
+            'content'    => $content,
+            'link'       => $link,
+            'is_read'    => 0,
+            'created_at' => current_time('mysql')
+        )
+    );
+    $notif_id = $wpdb->insert_id;
+    if ($notif_id) {
+        $notif = (object) array(
+            'id'         => $notif_id,
+            'user_id'    => $user_id,
+            'type'       => $type,
+            'content'    => $content,
+            'link'       => $link,
+            'is_read'    => 0,
+            'created_at' => current_time('mysql')
+        );
+        chat_notify_websocket_notification($user_id, $notif);
+    }
 }

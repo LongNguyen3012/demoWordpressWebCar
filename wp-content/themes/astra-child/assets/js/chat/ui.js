@@ -15,6 +15,7 @@ class ChatUI {
         this._typingTimeout = null;
         this.userId = window.ChatConfig ? window.ChatConfig.userId : null;
         this.currentRoomId = null;
+        this.roomSettingsDropdown = null;
     }
 
     escHtml(text) {
@@ -32,8 +33,73 @@ class ChatUI {
         this.reactionMap = {};
     }
 
-    setRoomHeader(name) {
-        this.elements.roomHeader.textContent = name || 'Select a room';
+    setRoomHeader(room) {
+        if (!room) {
+            this.elements.roomHeader.textContent = 'Select a room';
+            return;
+        }
+        this.elements.roomHeader.innerHTML = '';
+        var titleSpan = document.createElement('span');
+        titleSpan.textContent = room.name || 'Room ' + room.id;
+        this.elements.roomHeader.appendChild(titleSpan);
+
+        if (room.type !== 'direct') {
+            var settingsBtn = document.createElement('button');
+            settingsBtn.textContent = '⚙';
+            settingsBtn.style.cssText = 'margin-left:10px; background:none; border:none; font-size:1.2rem; cursor:pointer;';
+            settingsBtn.addEventListener('click', function(e) {
+                e.stopPropagation();
+                this.showRoomSettings(room);
+            }.bind(this));
+            this.elements.roomHeader.appendChild(settingsBtn);
+        }
+    }
+
+    showRoomSettings(room) {
+        if (this.roomSettingsDropdown) {
+            this.roomSettingsDropdown.remove();
+            this.roomSettingsDropdown = null;
+            return;
+        }
+        var dropdown = document.createElement('div');
+        dropdown.style.cssText = 'position:absolute; right:10px; top:40px; background:#fff; border:1px solid #ccc; border-radius:4px; box-shadow:0 2px 10px rgba(0,0,0,0.1); z-index:100; min-width:150px;';
+        dropdown.innerHTML = 
+            '<div style="padding:8px 12px; cursor:pointer; border-bottom:1px solid #eee;" id="invite-option">➕ Invite Member</div>' +
+            '<div style="padding:8px 12px; cursor:pointer; color:#d63638;" id="leave-option">🚪 Leave Room</div>';
+        var headerRect = this.elements.roomHeader.getBoundingClientRect();
+        dropdown.style.position = 'fixed';
+        dropdown.style.top = (headerRect.bottom + 5) + 'px';
+        dropdown.style.right = (window.innerWidth - headerRect.right + 10) + 'px';
+        document.body.appendChild(dropdown);
+        this.roomSettingsDropdown = dropdown;
+
+        dropdown.querySelector('#invite-option').addEventListener('click', function() {
+            dropdown.remove();
+            this.roomSettingsDropdown = null;
+            if (window.ChatApp) window.ChatApp.showInviteModal(room.id);
+        }.bind(this));
+
+        dropdown.querySelector('#leave-option').addEventListener('click', function() {
+            dropdown.remove();
+            this.roomSettingsDropdown = null;
+            if (window.ChatApp) window.ChatApp.confirmLeaveRoom(room.id);
+        }.bind(this));
+
+        document.addEventListener('click', function(e) {
+            if (dropdown && !dropdown.contains(e.target) && e.target !== this.elements.roomHeader.querySelector('button')) {
+                dropdown.remove();
+                this.roomSettingsDropdown = null;
+            }
+        }.bind(this));
+    }
+
+    showNotification(message) {
+        var div = document.createElement('div');
+        div.textContent = message;
+        div.style.cssText = 'position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:#333;color:#fff;padding:12px 24px;border-radius:4px;z-index:9999;opacity:0;transition:opacity 0.3s;';
+        document.body.appendChild(div);
+        requestAnimationFrame(function() { div.style.opacity = '1'; });
+        setTimeout(function() { div.style.opacity = '0'; setTimeout(function() { div.remove(); }, 300); }, 2000);
     }
 
     renderRoomList(rooms, currentRoomId, onSwitch) {
@@ -251,6 +317,11 @@ class ChatUI {
     }
 
     appendMessage(msg, userId, isAdmin, onEdit, onDelete, onReaction) {
+        if (this.typingIndicator) {
+            this.typingIndicator.remove();
+            this.typingIndicator = null;
+        }
+
         var div = document.createElement('div');
         div.dataset.messageId = msg.id;
         div.dataset.userId = msg.user_id;

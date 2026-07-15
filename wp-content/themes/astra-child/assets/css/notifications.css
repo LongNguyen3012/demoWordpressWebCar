@@ -1,0 +1,108 @@
+#notification-bell-wrapper {
+    position: relative;
+    display: inline-block;
+    margin-left: 15px;
+    vertical-align: middle;
+    padding-right: 5px;
+}
+
+#notification-bell {
+    font-size: 1.4rem;
+    cursor: pointer;
+    text-decoration: none;
+    color: #333;
+    position: relative;
+    display: inline-block;
+}
+
+#notification-badge {
+    position: absolute;
+    top: -6px;
+    right: -8px;
+    background: #d63638;
+    color: #fff;
+    border-radius: 50%;
+    font-size: 0.6rem;
+    font-weight: bold;
+    min-width: 14px;
+    height: 14px;
+    line-height: 14px;
+    text-align: center;
+    padding: 0 3px;
+    display: none;
+    box-sizing: border-box;
+}
+
+#notification-dropdown {
+    display: none;
+    position: absolute;
+    top: 100%;
+    right: 0;
+    width: 360px;
+    max-height: 400px;
+    overflow-y: auto;
+    background: #fff;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    z-index: 9999;
+}
+
+#notification-dropdown ul {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+#notification-dropdown li {
+    border-bottom: 1px solid #f0f0f0;
+    cursor: pointer;
+}
+
+#notification-dropdown li.unread {
+    background: #f0f7ff;
+    border-left: 3px solid #0073aa;
+}
+
+#notification-dropdown li.unread .notif-content {
+    font-weight: 600;
+}
+
+#notification-dropdown li:hover {
+    background: #f5f5f5;
+}
+
+#notification-dropdown li.unread:hover {
+    background: #e3efff;
+}
+
+#notification-dropdown .notif-content {
+    font-size: 0.9rem;
+    line-height: 1.4;
+    padding: 8px 12px;
+}
+
+#notification-dropdown small {
+    display: block;
+    font-size: 0.7rem;
+    color: #999;
+    padding: 0 12px 8px 12px;
+}
+
+#notification-dropdown .notif-footer {
+    padding: 8px 12px;
+    text-align: center;
+    border-top: 1px solid #eee;
+}
+
+#notification-dropdown .notif-footer button {
+    background: none;
+    border: none;
+    color: #0073aa;
+    cursor: pointer;
+    font-size: 0.85rem;
+}
+
+#notification-dropdown .notif-footer button:hover {
+    text-decoration: underline;
+}

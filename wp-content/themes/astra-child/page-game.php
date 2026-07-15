@@ -1,32 +1,29 @@
 <?php
 /**
- * Template Name: Chat
+ * Template Name: Driving Game
  */
 get_header();
 ?>
-<div class="chat-page">
-    <div class="container">
-        <h1><?php _te('nav_chat', 'Live Chat'); ?></h1>
-        <div id="chat-app">
-            <div style="display:flex; height:500px; border:1px solid #ddd; border-radius:4px; overflow:hidden;">
-                <div id="room-list" style="width:200px; border-right:1px solid #ddd; padding:10px; overflow-y:auto; background:#f5f5f5;">
-                    <h3 style="margin-top:0;">Rooms</h3>
-                    <div style="display:flex; gap:5px; margin-bottom:10px;">
-                        <button id="new-room-btn" style="padding:4px 12px; flex:1;">+ Group</button>
-                        <button id="new-direct-btn" style="padding:4px 12px; flex:1;">+ Direct</button>
-                    </div>
-                    <ul id="rooms" style="list-style:none; padding:0; margin:0;">
-                    </ul>
+<div class="game-page">
+    <div class="container" style="text-align:center;">
+        <h1><?php _te('game_title', 'Midnight Drive'); ?></h1>
+        <div id="game-wrapper" style="display:inline-block; position:relative;">
+            <canvas id="gameCanvas" width="600" height="400"></canvas>
+            <div id="game-ui" style="position:relative;">
+                <!-- Score display - top left -->
+                <div id="score-display" style="position:absolute; top:10px; left:10px; color:#fff; font-size:1.2rem; font-weight:bold; text-shadow:1px 1px 2px #000; z-index:10;">
+                    <?php _te('game_score', 'Score'); ?>: <span id="score">0</span>
                 </div>
-                <div style="flex:1; display:flex; flex-direction:column;">
-                    <div id="room-header" style="padding:10px 15px; background:#fff; border-bottom:2px solid #ddd; font-weight:bold; font-size:1.1rem;">
-                        Select a room
-                    </div>
-                    <div id="chat-messages" style="flex:1; overflow-y:auto; padding:10px; background:#f9f9f9; min-height:350px;"></div>
-                    <div style="display:flex; padding:10px; border-top:1px solid #ddd; background:#fff;">
-                        <input type="text" id="message-input" style="flex:1; padding:8px; border:1px solid #ccc; border-radius:4px;" placeholder="<?php _te('chat_type_message', 'Type a message...'); ?>">
-                        <button id="send-btn" style="padding:8px 20px; margin-left:10px; background:#2C2C2C; color:#fff; border:none; border-radius:4px; cursor:pointer;"><?php _te('chat_send', 'Send'); ?></button>
-                    </div>
+                <!-- Speed display - top right -->
+                <div id="speed-display" style="position:absolute; top:10px; right:10px; color:#fff; font-size:1.2rem; font-weight:bold; text-shadow:1px 1px 2px #000; z-index:10;">
+                    <?php _te('game_speed', 'Speed'); ?>: <span id="speed">0</span> km/h
+                </div>
+                <!-- Game Over Overlay -->
+                <div id="game-over-overlay" style="display:none; position:absolute; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.7); flex-direction:column; justify-content:center; align-items:center; color:#fff; z-index:20;">
+                    <h2><?php _te('game_over', 'Game Over'); ?></h2>
+                    <p><?php _te('game_final_score', 'Final Score'); ?>: <span id="final-score">0</span></p>
+                    <p><?php _te('game_top_speed', 'Top Speed'); ?>: <span id="top-speed">0</span> km/h</p>
+                    <button id="restart-btn" style="padding:10px 30px; background:#2C2C2C; color:#fff; border:none; border-radius:4px; font-size:1.1rem; cursor:pointer; margin-top:10px;"><?php _te('game_restart', 'Restart'); ?></button>
                 </div>
             </div>
         </div>

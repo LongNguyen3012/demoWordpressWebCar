@@ -62,11 +62,36 @@ function chat_register_routes() {
         'callback' => 'chat_rest_mark_read',
         'permission_callback' => 'chat_rest_require_login'
     ));
-
-    // Direct message route
     register_rest_route('mytheme/v1', '/chat/direct/(?P<user_id>\d+)', array(
         'methods'  => 'GET',
         'callback' => 'chat_rest_get_direct_room',
+        'permission_callback' => 'chat_rest_require_login'
+    ));
+    register_rest_route('mytheme/v1', '/chat/rooms/(?P<id>\d+)/leave', array(
+        'methods'  => 'POST',
+        'callback' => 'chat_rest_leave_room',
+        'permission_callback' => 'chat_rest_require_login'
+    ));
+    register_rest_route('mytheme/v1', '/chat/rooms/(?P<id>\d+)/invite', array(
+        'methods'  => 'POST',
+        'callback' => 'chat_rest_invite_user',
+        'permission_callback' => 'chat_rest_require_login'
+    ));
+
+    // Notifications
+    register_rest_route('mytheme/v1', '/chat/notifications', array(
+        'methods'  => 'GET',
+        'callback' => 'chat_rest_get_notifications',
+        'permission_callback' => 'chat_rest_require_login'
+    ));
+    register_rest_route('mytheme/v1', '/chat/notifications/(?P<id>\d+)/read', array(
+        'methods'  => 'POST',
+        'callback' => 'chat_rest_mark_notification_read',
+        'permission_callback' => 'chat_rest_require_login'
+    ));
+    register_rest_route('mytheme/v1', '/chat/notifications/read-all', array(
+        'methods'  => 'POST',
+        'callback' => 'chat_rest_mark_all_notifications_read',
         'permission_callback' => 'chat_rest_require_login'
     ));
 }
@@ -188,6 +213,20 @@ function chat_rest_post_message($request) {
     global $wpdb;
     $message_id = $wpdb->insert_id;
     chat_notify_websocket_server($message_id);
+
+    // Notify other members
+    $members = chat_get_room_members($room_id);
+    $current_user = $user_id;
+    $user_name = wp_get_current_user()->display_name;
+    $chat_page = get_page_by_path('chat');
+    $chat_url = $chat_page ? get_permalink($chat_page) : home_url('/');
+    foreach ($members as $member) {
+        if ((int)$member === (int)$current_user) continue;
+        $content = sprintf(__t('notification_new_message', '%s sent a message'), $user_name);
+        $link = add_query_arg('room', $room_id, $chat_url);
+        chat_create_notification($member, 'message', $content, $link);
+    }
+
     return rest_ensure_response(array('success' => true, 'id' => $message_id));
 }
 
@@ -291,10 +330,127 @@ function chat_rest_get_direct_room($request) {
     return rest_ensure_response($room);
 }
 
-// ----------------------------------------------------------------------
-// FIXED NOTIFICATION FUNCTIONS – using base URL + endpoint
-// ----------------------------------------------------------------------
+function chat_rest_leave_room($request) {
+    $user_id = get_current_user_id();
+    $room_id = (int) $request->get_param('id');
+    if (!chat_is_user_member_of_room($user_id, $room_id)) {
+        return new WP_Error('not_member', 'You are not a member of this room', array('status' => 403));
+    }
+    global $wpdb;
+    $room = $wpdb->get_row($wpdb->prepare("SELECT type FROM {$wpdb->prefix}chat_rooms WHERE id = %d", $room_id));
+    if ($room && $room->type === 'direct') {
+        return new WP_Error('cannot_leave', 'Cannot leave a direct chat', array('status' => 400));
+    }
+    $removed = chat_remove_member($room_id, $user_id);
+    if (!$removed) {
+        return new WP_Error('db_error', 'Could not leave room', array('status' => 500));
+    }
+    chat_notify_websocket_member_removed($room_id, $user_id);
 
+    // Notify remaining members
+    $members = chat_get_room_members($room_id);
+    $user_name = wp_get_current_user()->display_name;
+    $room_name = $room->name ?: 'Room';
+    $chat_page = get_page_by_path('chat');
+    $chat_url = $chat_page ? get_permalink($chat_page) : home_url('/');
+    foreach ($members as $member) {
+        if ((int)$member === (int)$user_id) continue;
+        $content = sprintf(__t('notification_left', '%s left the room "%s"'), $user_name, $room_name);
+        chat_create_notification($member, 'leave', $content, $chat_url);
+    }
+
+    return rest_ensure_response(array('success' => true));
+}
+
+function chat_rest_invite_user($request) {
+    $user_id = get_current_user_id();
+    $room_id = (int) $request->get_param('id');
+    $target_user_id = (int) $request->get_param('user_id');
+    if (!chat_is_user_member_of_room($user_id, $room_id)) {
+        return new WP_Error('not_member', 'You are not a member of this room', array('status' => 403));
+    }
+    if (chat_is_user_member_of_room($target_user_id, $room_id)) {
+        return new WP_Error('already_member', 'User is already a member', array('status' => 400));
+    }
+    chat_add_member($room_id, $target_user_id);
+    chat_notify_websocket_member_added($room_id, $target_user_id);
+
+    // Notify the invited user
+    $inviter_name = wp_get_current_user()->display_name;
+    global $wpdb;
+    $room = $wpdb->get_row($wpdb->prepare("SELECT name FROM {$wpdb->prefix}chat_rooms WHERE id = %d", $room_id));
+    $room_name = $room->name ?: 'Room';
+    $chat_page = get_page_by_path('chat');
+    $chat_url = $chat_page ? get_permalink($chat_page) : home_url('/');
+    $content = sprintf(__t('notification_invited', '%s invited you to join "%s"'), $inviter_name, $room_name);
+    $link = add_query_arg('room', $room_id, $chat_url);
+    chat_create_notification($target_user_id, 'invite', $content, $link);
+
+    return rest_ensure_response(array('success' => true));
+}
+
+// ---- Notification endpoints ----
+function chat_rest_get_notifications($request) {
+    $user_id = get_current_user_id();
+    global $wpdb;
+    $table = $wpdb->prefix . 'chat_notifications';
+    $notifications = $wpdb->get_results($wpdb->prepare(
+        "SELECT * FROM $table WHERE user_id = %d ORDER BY created_at DESC LIMIT 50",
+        $user_id
+    ));
+    $unread_count = $wpdb->get_var($wpdb->prepare(
+        "SELECT COUNT(*) FROM $table WHERE user_id = %d AND is_read = 0",
+        $user_id
+    ));
+    return rest_ensure_response(array(
+        'notifications' => $notifications,
+        'unread_count'  => (int)$unread_count
+    ));
+}
+
+function chat_rest_mark_notification_read($request) {
+    $user_id = get_current_user_id();
+    $notif_id = (int) $request->get_param('id');
+    global $wpdb;
+    $table = $wpdb->prefix . 'chat_notifications';
+    $result = $wpdb->update(
+        $table,
+        array('is_read' => 1),
+        array('id' => $notif_id, 'user_id' => $user_id)
+    );
+    if ($result === false) {
+        return new WP_Error('db_error', 'Could not update', array('status' => 500));
+    }
+    return rest_ensure_response(array('success' => true));
+}
+
+function chat_rest_mark_all_notifications_read($request) {
+    $user_id = get_current_user_id();
+    global $wpdb;
+    $table = $wpdb->prefix . 'chat_notifications';
+    $result = $wpdb->update(
+        $table,
+        array('is_read' => 1),
+        array('user_id' => $user_id, 'is_read' => 0)
+    );
+    if ($result === false) {
+        return new WP_Error('db_error', 'Could not update', array('status' => 500));
+    }
+    return rest_ensure_response(array('success' => true));
+}
+
+// ---- WebSocket notification helper ----
+function chat_notify_websocket_notification($user_id, $notification) {
+    $base = defined('CHAT_NODE_SERVER_URL') ? CHAT_NODE_SERVER_URL : 'http://localhost:3000';
+    $node_url = $base . '/new-notification';
+    wp_remote_post($node_url, array(
+        'body'    => json_encode(array('user_id' => $user_id, 'notification' => $notification)),
+        'headers' => array('Content-Type' => 'application/json'),
+        'timeout' => 0.5,
+    ));
+}
+
+// ---- Existing WebSocket notifications ----
 function chat_notify_websocket_server($message_id) {
     global $wpdb;
     $table = $wpdb->prefix . 'chat_messages';
@@ -394,6 +550,27 @@ function chat_notify_websocket_read($room_id, $user_id, $last_message_id) {
     }
 }
 
+function chat_notify_websocket_member_added($room_id, $user_id) {
+    $base = defined('CHAT_NODE_SERVER_URL') ? CHAT_NODE_SERVER_URL : 'http://localhost:3000';
+    $node_url = $base . '/member-added';
+    wp_remote_post($node_url, array(
+        'body'    => json_encode(array('room_id' => $room_id, 'user_id' => $user_id)),
+        'headers' => array('Content-Type' => 'application/json'),
+        'timeout' => 0.5,
+    ));
+}
+
+function chat_notify_websocket_member_removed($room_id, $user_id) {
+    $base = defined('CHAT_NODE_SERVER_URL') ? CHAT_NODE_SERVER_URL : 'http://localhost:3000';
+    $node_url = $base . '/member-removed';
+    wp_remote_post($node_url, array(
+        'body'    => json_encode(array('room_id' => $room_id, 'user_id' => $user_id)),
+        'headers' => array('Content-Type' => 'application/json'),
+        'timeout' => 0.5,
+    ));
+}
+
+// ---- Reactions and Read (unchanged) ----
 function chat_rest_add_reaction($request) {
     $user_id = get_current_user_id();
     if (!$user_id) {

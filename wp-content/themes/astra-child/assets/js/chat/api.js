@@ -127,6 +127,47 @@ class ChatAPI {
         }
         return res.json();
     }
+
+    async getDirectRoom(userId) {
+        var res = await fetch(this.restUrl + '/direct/' + userId, {
+            headers: { 'X-WP-Nonce': this.nonce },
+            credentials: 'include'
+        });
+        if (!res.ok) throw new Error('Failed to get direct room');
+        return res.json();
+    }
+    
+    async inviteUser(roomId, userId) {
+        var res = await fetch(this.restUrl + '/rooms/' + roomId + '/invite', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-WP-Nonce': this.nonce
+            },
+            body: JSON.stringify({ user_id: userId }),
+            credentials: 'include'
+        });
+        if (!res.ok) {
+            var err = await res.json();
+            throw new Error(err.message || 'Failed to invite user');
+        }
+        return res.json();
+    }
+
+    async leaveRoom(roomId) {
+        var res = await fetch(this.restUrl + '/rooms/' + roomId + '/leave', {
+            method: 'POST',
+            headers: { 'X-WP-Nonce': this.nonce },
+            credentials: 'include'
+        });
+        if (!res.ok) {
+            var err = await res.json();
+            throw new Error(err.message || 'Failed to leave room');
+        }
+        return res.json();
+    }
+
 }
 
 window.ChatAPI = ChatAPI;
+

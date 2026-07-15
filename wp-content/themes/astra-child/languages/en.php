@@ -195,4 +195,9 @@ return [
     'game_speed' => 'Speed',
     'game_top_speed' => 'Top Speed',
 
+    //notification
+    'notification_new_message' => '%s sent a message',
+    'notification_invited' => '%s invited you to join "%s"',
+    'notification_left' => '%s left the room "%s"',
+
 ];

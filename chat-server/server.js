@@ -11,6 +11,7 @@ const wss = new WebSocket.Server({ port: WS_PORT });
 console.log(`WebSocket server running on ws://localhost:${WS_PORT} (started at ${new Date().toISOString()})`);
 
 const roomClients = new Map();
+const userClients = new Map(); // userId -> Set of WebSockets (for notifications)
 const messageQueues = new Map();
 const pendingDeliveries = new Map();
 
@@ -113,6 +114,7 @@ wss.on('connection', (ws) => {
     ws.roomId = null;
     ws.userId = null;
     ws.isAlive = true;
+    ws.userIdForNotifications = null;
 
     const interval = setInterval(() => {
         if (ws.readyState === WebSocket.OPEN) {
@@ -131,6 +133,16 @@ wss.on('connection', (ws) => {
             const parsed = JSON.parse(data);
             if (parsed.type === 'subscribe') {
                 subscribeClient(ws, parsed.roomId, parsed.userId);
+            } else if (parsed.type === 'subscribe_notifications') {
+                const userId = parsed.userId;
+                if (userId) {
+                    if (!userClients.has(userId)) {
+                        userClients.set(userId, new Set());
+                    }
+                    userClients.get(userId).add(ws);
+                    ws.userIdForNotifications = userId;
+                    ws.send(JSON.stringify({ type: 'system', message: 'Subscribed to notifications' }));
+                }
             } else if (parsed.type === 'ping') {
                 if (parsed.roomId) {
                     subscribeClient(ws, parsed.roomId, ws.userId);
@@ -166,6 +178,9 @@ wss.on('connection', (ws) => {
         if (ws.roomId !== null && roomClients.has(ws.roomId)) {
             roomClients.get(ws.roomId).delete(ws);
             console.log(`[ws] Client left room ${ws.roomId} (now ${roomClients.get(ws.roomId).size} clients).`);
+        }
+        if (ws.userIdForNotifications && userClients.has(ws.userIdForNotifications)) {
+            userClients.get(ws.userIdForNotifications).delete(ws);
         }
     });
 
@@ -223,6 +238,39 @@ app.post('/reaction', (req, res) => {
 app.post('/read', (req, res) => {
     const { room_id, user_id, last_message_id } = req.body;
     broadcastToRoom(String(room_id), { type: 'read', data: { room_id, user_id, last_message_id } });
+    res.json({ success: true });
+});
+
+app.post('/member-added', (req, res) => {
+    const { room_id, user_id } = req.body;
+    broadcastToRoom(String(room_id), { type: 'member_added', data: { room_id, user_id } });
+    res.json({ success: true });
+});
+
+app.post('/member-removed', (req, res) => {
+    const { room_id, user_id } = req.body;
+    broadcastToRoom(String(room_id), { type: 'member_removed', data: { room_id, user_id } });
+    res.json({ success: true });
+});
+
+// Notification endpoint
+app.post('/new-notification', (req, res) => {
+    const { user_id, notification } = req.body;
+    if (!user_id || !notification) {
+        return res.status(400).json({ error: 'Missing user_id or notification' });
+    }
+    const userId = String(user_id);
+    if (userClients.has(userId)) {
+        userClients.get(userId).forEach(client => {
+            if (client.readyState === WebSocket.OPEN) {
+                try {
+                    client.send(JSON.stringify({ type: 'notification', data: notification }));
+                } catch (err) {
+                    console.error(`[notif] Error sending to user ${userId}: ${err.message}`);
+                }
+            }
+        });
+    }
     res.json({ success: true });
 });
 

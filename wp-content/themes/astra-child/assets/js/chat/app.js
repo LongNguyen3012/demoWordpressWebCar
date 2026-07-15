@@ -26,6 +26,17 @@ class ChatApp {
         this.loadRooms();
         this.bindEvents();
         this.setupTyping();
+        this.bindPopState();
+    }
+
+    bindPopState() {
+        window.addEventListener('popstate', (event) => {
+            const urlParams = new URLSearchParams(window.location.search);
+            const roomId = urlParams.has('room') ? parseInt(urlParams.get('room')) : null;
+            if (roomId && this.roomData[roomId]) {
+                this.switchRoom(roomId);
+            }
+        });
     }
 
     connectWebSocket() {
@@ -109,6 +120,14 @@ class ChatApp {
             case 'reaction':
                 this.ui.updateReaction(data.data);
                 break;
+            case 'member_added':
+                console.log('[WS] Member added:', data.data);
+                this.loadRooms();
+                break;
+            case 'member_removed':
+                console.log('[WS] Member removed:', data.data);
+                this.loadRooms();
+                break;
             default:
                 console.log('[WS] Unknown message type:', data.type);
         }
@@ -125,20 +144,57 @@ class ChatApp {
         this.currentRoomId = roomId;
         this.ui.currentRoomId = roomId;
         localStorage.setItem('chat_active_room', roomId);
+        this.updateUrlRoom(roomId);
+    }
+
+    updateUrlRoom(roomId) {
+        if (!roomId) return;
+        var currentParams = new URLSearchParams(window.location.search);
+        currentParams.set('room', roomId);
+        var queryString = currentParams.toString();
+        var finalUrl = window.location.pathname + (queryString ? '?' + queryString : '');
+        if (window.history && window.history.pushState) {
+            window.history.pushState({ roomId: roomId }, '', finalUrl);
+        }
     }
 
     async loadRooms() {
         try {
+            // Read URL parameter for room
+            const urlParams = new URLSearchParams(window.location.search);
+            let roomFromUrl = urlParams.has('room') ? parseInt(urlParams.get('room')) : null;
+            console.log('[loadRooms] URL room param:', roomFromUrl);
+
             var rooms = await this.api.fetchRooms();
             this.roomData = {};
             rooms.forEach(function(room) { this.roomData[room.id] = room; }.bind(this));
+
+            console.log('[loadRooms] Rooms loaded:', rooms.map(r => r.id));
+
+            // Determine target room: URL param > stored active > first
+            let targetRoom = null;
+            if (roomFromUrl && rooms.some(function(r) { return r.id == roomFromUrl; }.bind(this))) {
+                targetRoom = roomFromUrl;
+                console.log('[loadRooms] Using URL param:', targetRoom);
+            } else if (this.activeRoomId && rooms.some(function(r) { return r.id == this.activeRoomId; }.bind(this))) {
+                targetRoom = parseInt(this.activeRoomId);
+                console.log('[loadRooms] Using stored active:', targetRoom);
+            } else if (rooms.length > 0) {
+                targetRoom = rooms[0].id;
+                console.log('[loadRooms] Using first room:', targetRoom);
+            }
+
             this.ui.renderRoomList(rooms, this.currentRoomId, function(roomId) { this.switchRoom(roomId); }.bind(this));
-            if (rooms.length > 0) {
-                var targetRoom = this.activeRoomId && rooms.some(function(r) { return r.id == this.activeRoomId; }.bind(this)) ? parseInt(this.activeRoomId) : rooms[0].id;
-                if (targetRoom !== this.currentRoomId) {
+
+            if (targetRoom) {
+                // Always switch if targetRoom is different from current, or if we have a URL param (force switch)
+                if (targetRoom !== this.currentRoomId || roomFromUrl) {
+                    console.log('[loadRooms] Switching to target room:', targetRoom);
                     this.switchRoom(targetRoom);
                 } else {
+                    console.log('[loadRooms] Already on target room, just highlight');
                     this.applyHighlight(targetRoom);
+                    this.updateUrlRoom(targetRoom);
                 }
             } else {
                 this.ui.showNoRooms();
@@ -149,13 +205,16 @@ class ChatApp {
     }
 
     switchRoom(roomId) {
+        console.log('[switchRoom] Switching to:', roomId);
         if (this.currentRoomId === roomId) {
+            console.log('[switchRoom] Already on this room, just highlight and update URL');
             this.applyHighlight(roomId);
+            this.updateUrlRoom(roomId);
             return;
         }
         this.subscribeToRoom(roomId);
         var room = this.roomData[roomId];
-        this.ui.setRoomHeader(room ? (room.name || 'Room ' + room.id) : 'Room');
+        this.ui.setRoomHeader(room);
         this.ui.showLoadingMessages();
         this.loadMessages(roomId);
         this.applyHighlight(roomId);
@@ -544,8 +603,239 @@ class ChatApp {
         });
     }
 
+    showCreateDirectModal() {
+        var existingModal = document.querySelector('.chat-direct-modal');
+        if (existingModal) {
+            existingModal.remove();
+        }
+
+        var modal = document.createElement('div');
+        modal.className = 'chat-direct-modal';
+        modal.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);display:flex;align-items:center;justify-content:center;z-index:9999;';
+
+        var panel = document.createElement('div');
+        panel.style.cssText = 'background:#fff;padding:20px;border-radius:8px;min-width:400px;max-width:600px;';
+        panel.innerHTML = '<h3>New Direct Message</h3>' +
+            '<div style="margin-bottom:10px;">' +
+            '<label>Search User</label>' +
+            '<input type="text" id="direct-user-search" style="width:100%;padding:8px;border:1px solid #ccc;border-radius:4px;" placeholder="Type name or email...">' +
+            '<div id="direct-search-results" style="max-height:150px;overflow-y:auto;border:1px solid #ddd;margin-top:4px;display:none;"></div>' +
+            '</div>' +
+            '<div style="display:flex;gap:10px;margin-top:10px;">' +
+            '<button id="direct-start-btn" style="padding:8px 20px;background:#2C2C2C;color:#fff;border:none;border-radius:4px;cursor:pointer;opacity:0.5;pointer-events:none;" disabled>Start Chat</button>' +
+            '<button id="direct-cancel-btn" style="padding:8px 20px;background:#ccc;border:none;border-radius:4px;cursor:pointer;">Cancel</button>' +
+            '</div>';
+        modal.appendChild(panel);
+        document.body.appendChild(modal);
+
+        modal.addEventListener('click', function(e) {
+            if (e.target === modal) {
+                modal.remove();
+            }
+        });
+
+        var searchInput = panel.querySelector('#direct-user-search');
+        var resultsDiv = panel.querySelector('#direct-search-results');
+        var startBtn = panel.querySelector('#direct-start-btn');
+        var cancelBtn = panel.querySelector('#direct-cancel-btn');
+        var selectedUserId = null;
+
+        function updateStartBtn() {
+            if (selectedUserId) {
+                startBtn.disabled = false;
+                startBtn.style.opacity = '1';
+                startBtn.style.pointerEvents = 'auto';
+            } else {
+                startBtn.disabled = true;
+                startBtn.style.opacity = '0.5';
+                startBtn.style.pointerEvents = 'none';
+            }
+        }
+
+        searchInput.addEventListener('input', async function() {
+            var query = searchInput.value.trim();
+            if (query.length < 2) {
+                resultsDiv.style.display = 'none';
+                return;
+            }
+            var users = await this.api.searchUsers(query);
+            users = users.filter(function(u) { return u.ID !== this.config.userId; }.bind(this));
+            resultsDiv.style.display = 'block';
+            resultsDiv.innerHTML = users.map(function(u) {
+                return '<div style="padding:6px;cursor:pointer;border-bottom:1px solid #eee;" data-id="' + u.ID + '" data-name="' + this.ui.escHtml(u.display_name) + '">' + this.ui.escHtml(u.display_name) + ' (' + this.ui.escHtml(u.user_login) + ')</div>';
+            }.bind(this)).join('') || '<div style="padding:6px;color:#999;">No users found</div>';
+            resultsDiv.querySelectorAll('div[data-id]').forEach(function(el) {
+                el.addEventListener('click', function() {
+                    var id = parseInt(el.dataset.id);
+                    selectedUserId = id;
+                    searchInput.value = el.dataset.name + ' (' + el.textContent.split('(').pop().replace(')','') + ')';
+                    resultsDiv.style.display = 'none';
+                    updateStartBtn();
+                });
+            });
+        }.bind(this));
+
+        startBtn.addEventListener('click', async function() {
+            if (!selectedUserId) return;
+            try {
+                var room = await this.api.getDirectRoom(selectedUserId);
+                modal.remove();
+                this.switchRoom(room.id);
+                this.loadRooms();
+            } catch (err) {
+                console.error(err);
+                alert(err.message || 'Failed to create direct chat');
+                modal.remove();
+            }
+        }.bind(this));
+
+        cancelBtn.addEventListener('click', function() {
+            modal.remove();
+        });
+    }
+
+    async inviteUser(roomId, userId) {
+        var res = await fetch(this.api.restUrl + '/rooms/' + roomId + '/invite', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-WP-Nonce': this.api.nonce
+            },
+            body: JSON.stringify({ user_id: userId }),
+            credentials: 'include'
+        });
+        if (!res.ok) {
+            var err = await res.json();
+            throw new Error(err.message || 'Failed to invite user');
+        }
+        return res.json();
+    }
+
+    async leaveRoom(roomId) {
+        var res = await fetch(this.api.restUrl + '/rooms/' + roomId + '/leave', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-WP-Nonce': this.api.nonce
+            },
+            credentials: 'include'
+        });
+        if (!res.ok) {
+            var err = await res.json();
+            throw new Error(err.message || 'Failed to leave room');
+        }
+        return res.json();
+    }
+
+    showInviteModal(roomId) {
+        var modal = document.createElement('div');
+        modal.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);display:flex;align-items:center;justify-content:center;z-index:10000;';
+        var panel = document.createElement('div');
+        panel.style.cssText = 'background:#fff;padding:20px;border-radius:8px;min-width:400px;max-width:600px;';
+        panel.innerHTML = '<h3>Invite Member</h3>' +
+            '<div style="margin-bottom:10px;">' +
+            '<label>Search User</label>' +
+            '<input type="text" id="invite-user-search" style="width:100%;padding:8px;border:1px solid #ccc;border-radius:4px;" placeholder="Type name or email...">' +
+            '<div id="invite-search-results" style="max-height:150px;overflow-y:auto;border:1px solid #ddd;margin-top:4px;display:none;"></div>' +
+            '</div>' +
+            '<div style="display:flex;gap:10px;margin-top:10px;">' +
+            '<button id="invite-start-btn" style="padding:8px 20px;background:#2C2C2C;color:#fff;border:none;border-radius:4px;cursor:pointer;opacity:0.5;pointer-events:none;" disabled>Invite</button>' +
+            '<button id="invite-cancel-btn" style="padding:8px 20px;background:#ccc;border:none;border-radius:4px;cursor:pointer;">Cancel</button>' +
+            '</div>';
+        modal.appendChild(panel);
+        document.body.appendChild(modal);
+
+        modal.addEventListener('click', function(e) {
+            if (e.target === modal) modal.remove();
+        });
+
+        var searchInput = panel.querySelector('#invite-user-search');
+        var resultsDiv = panel.querySelector('#invite-search-results');
+        var inviteBtn = panel.querySelector('#invite-start-btn');
+        var cancelBtn = panel.querySelector('#invite-cancel-btn');
+        var selectedUserId = null;
+
+        function updateInviteBtn() {
+            if (selectedUserId) {
+                inviteBtn.disabled = false;
+                inviteBtn.style.opacity = '1';
+                inviteBtn.style.pointerEvents = 'auto';
+            } else {
+                inviteBtn.disabled = true;
+                inviteBtn.style.opacity = '0.5';
+                inviteBtn.style.pointerEvents = 'none';
+            }
+        }
+
+        searchInput.addEventListener('input', async function() {
+            var query = searchInput.value.trim();
+            if (query.length < 2) {
+                resultsDiv.style.display = 'none';
+                return;
+            }
+            var users = await this.api.searchUsers(query);
+            users = users.filter(function(u) { return u.ID !== this.config.userId; }.bind(this));
+            resultsDiv.style.display = 'block';
+            resultsDiv.innerHTML = users.map(function(u) {
+                return '<div style="padding:6px;cursor:pointer;border-bottom:1px solid #eee;" data-id="' + u.ID + '" data-name="' + this.ui.escHtml(u.display_name) + '">' + this.ui.escHtml(u.display_name) + ' (' + this.ui.escHtml(u.user_login) + ')</div>';
+            }.bind(this)).join('') || '<div style="padding:6px;color:#999;">No users found</div>';
+            resultsDiv.querySelectorAll('div[data-id]').forEach(function(el) {
+                el.addEventListener('click', function() {
+                    var id = parseInt(el.dataset.id);
+                    selectedUserId = id;
+                    searchInput.value = el.dataset.name + ' (' + el.textContent.split('(').pop().replace(')','') + ')';
+                    resultsDiv.style.display = 'none';
+                    updateInviteBtn();
+                });
+            });
+        }.bind(this));
+
+        inviteBtn.addEventListener('click', async function() {
+            if (!selectedUserId) return;
+            try {
+                await this.inviteUser(roomId, selectedUserId);
+                modal.remove();
+                this.ui.showNotification('User invited successfully');
+                this.loadRooms();
+            } catch (err) {
+                alert(err.message);
+                modal.remove();
+            }
+        }.bind(this));
+
+        cancelBtn.addEventListener('click', function() { modal.remove(); });
+    }
+
+    confirmLeaveRoom(roomId) {
+        this.ui.showConfirmModal(
+            'Leave Room',
+            'Are you sure you want to leave this room? You will no longer receive messages.',
+            'Leave',
+            'Cancel',
+            async function() {
+                try {
+                    await this.leaveRoom(roomId);
+                    this.ui.showNotification('You left the room');
+                    this.loadRooms();
+                    if (this.currentRoomId == roomId) {
+                        var rooms = Object.keys(this.roomData);
+                        if (rooms.length > 0) {
+                            this.switchRoom(rooms[0]);
+                        } else {
+                            this.ui.setRoomHeader(null);
+                            this.ui.showNoRooms();
+                        }
+                    }
+                } catch (err) {
+                    alert(err.message);
+                }
+            }.bind(this)
+        );
+    }
+
     bindEvents() {
         this.ui.elements.newRoomBtn.addEventListener('click', function() { this.showCreateRoomModal(); }.bind(this));
+        this.ui.elements.newDirectBtn.addEventListener('click', function() { this.showCreateDirectModal(); }.bind(this));
         this.ui.elements.sendButton.addEventListener('click', function() { this.sendMessage(); }.bind(this));
         this.ui.elements.messageInput.addEventListener('keydown', function(e) {
             if (e.key === 'Enter' && !e.shiftKey) {
@@ -553,6 +843,14 @@ class ChatApp {
                 this.sendMessage();
             }
         }.bind(this));
+    }
+}
+
+function openDirectModal() {
+    if (window.ChatApp && typeof window.ChatApp.showCreateDirectModal === 'function') {
+        window.ChatApp.showCreateDirectModal();
+    } else {
+        alert('Chat not fully loaded. Please refresh the page.');
     }
 }
 

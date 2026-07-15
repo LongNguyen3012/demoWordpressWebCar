@@ -1,8 +1,4 @@
 <?php
-/**
- * Astra Child Theme Functions
- */
-
 if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
@@ -87,3 +83,18 @@ add_action('template_include', function($template) {
     }
     return $template;
 });
+
+add_action('wp_enqueue_scripts', 'enqueue_notification_scripts');
+function enqueue_notification_scripts() {
+    if (!is_user_logged_in()) {
+        return;
+    }
+    wp_enqueue_style('notification-style', get_stylesheet_directory_uri() . '/assets/css/notifications.css', array(), '1.0');
+    wp_enqueue_script('notification-script', get_stylesheet_directory_uri() . '/assets/js/notifications.js', array(), '1.0', true);
+    wp_localize_script('notification-script', 'notificationSettings', array(
+        'restUrl' => rest_url('mytheme/v1/chat'),
+        'nonce'   => wp_create_nonce('wp_rest'),
+        'userId'  => get_current_user_id(),
+        'wsUrl'   => defined('CHAT_WS_URL') ? CHAT_WS_URL : 'ws://localhost:8080',
+    ));
+}

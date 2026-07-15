@@ -11,7 +11,10 @@ get_header();
             <div style="display:flex; height:500px; border:1px solid #ddd; border-radius:4px; overflow:hidden;">
                 <div id="room-list" style="width:200px; border-right:1px solid #ddd; padding:10px; overflow-y:auto; background:#f5f5f5;">
                     <h3 style="margin-top:0;">Rooms</h3>
-                    <button id="new-room-btn" style="margin-bottom:10px; padding:4px 12px;">+ New Group</button>
+                    <div style="display:flex; gap:5px; margin-bottom:10px;">
+                        <button id="new-room-btn" style="padding:4px 12px; flex:1;">+ New Group</button>
+                        <button id="new-direct-btn" style="padding:4px 12px; flex:1;" onclick="openDirectModal();">+ Direct</button>
+                    </div>
                     <ul id="rooms" style="list-style:none; padding:0; margin:0;">
                     </ul>
                 </div>
