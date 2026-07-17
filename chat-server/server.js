@@ -253,7 +253,6 @@ app.post('/member-removed', (req, res) => {
     res.json({ success: true });
 });
 
-// Notification endpoint
 app.post('/new-notification', (req, res) => {
     const { user_id, notification } = req.body;
     if (!user_id || !notification) {

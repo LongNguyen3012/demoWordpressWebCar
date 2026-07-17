@@ -118,6 +118,7 @@ function add_account_menu_item($items, $args) {
     $login_page = get_permalink(get_page_by_path('login'));
     $register_page = get_permalink(get_page_by_path('register'));
     $profile_page = get_permalink(get_page_by_path('profile'));
+    $settings_page = get_permalink(get_page_by_path('settings')); // NEW: get settings page
 
     if (is_user_logged_in()) {
         $logout_url = wp_logout_url(home_url('/'));
@@ -126,6 +127,9 @@ function add_account_menu_item($items, $args) {
         $items .= '<ul class="sub-menu">';
         if ($profile_page) {
             $items .= '<li class="menu-item"><a href="' . esc_url($profile_page) . '" class="menu-link">' . __t('profile_title', 'Profile') . '</a></li>';
+        }
+        if ($settings_page) {
+            $items .= '<li class="menu-item"><a href="' . esc_url($settings_page) . '" class="menu-link">' . __t('settings_title', 'Settings') . '</a></li>';
         }
         $items .= '<li class="menu-item"><a href="' . esc_url($logout_url) . '" class="menu-link">' . __t('login_logout', 'Log Out') . '</a></li>';
         $items .= '</ul></li>';
@@ -161,7 +165,6 @@ function add_notification_bell_menu_item($items, $args) {
     $bell .= '<ul id="notification-list" style="list-style:none; margin:0; padding:0;"></ul>';
     $bell .= '</div>';
     $bell .= '</li>';
-
 
     return $items . $bell;
 }

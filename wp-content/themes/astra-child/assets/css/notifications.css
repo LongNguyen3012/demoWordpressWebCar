@@ -3,7 +3,8 @@
     display: inline-block;
     margin-left: 15px;
     vertical-align: middle;
-    padding-right: 5px;
+    padding: 0 15px 0 5px;
+    overflow: visible !important;
 }
 
 #notification-bell {
@@ -11,26 +12,29 @@
     cursor: pointer;
     text-decoration: none;
     color: #333;
-    position: relative;
     display: inline-block;
+    line-height: 1.4;
 }
 
 #notification-badge {
     position: absolute;
-    top: -6px;
-    right: -8px;
+    top: -8px;
+    right: 4px;
     background: #d63638;
     color: #fff;
     border-radius: 50%;
     font-size: 0.6rem;
     font-weight: bold;
-    min-width: 14px;
-    height: 14px;
-    line-height: 14px;
+    min-width: 16px;
+    height: 16px;
+    line-height: 16px;
     text-align: center;
-    padding: 0 3px;
+    padding: 0 4px;
     display: none;
     box-sizing: border-box;
+    z-index: 99999;
+    pointer-events: none;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.2);
 }
 
 #notification-dropdown {
@@ -57,15 +61,29 @@
 #notification-dropdown li {
     border-bottom: 1px solid #f0f0f0;
     cursor: pointer;
+    padding: 8px 12px;
+    position: relative;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    gap: 4px 0;
 }
 
 #notification-dropdown li.unread {
     background: #f0f7ff;
-    border-left: 3px solid #0073aa;
+    border-left: 4px solid #0073aa;
 }
 
 #notification-dropdown li.unread .notif-content {
     font-weight: 600;
+}
+
+#notification-dropdown li.unread::before {
+    content: "●";
+    color: #0073aa;
+    font-size: 0.6rem;
+    margin-right: 6px;
+    align-self: center;
 }
 
 #notification-dropdown li:hover {
@@ -79,20 +97,47 @@
 #notification-dropdown .notif-content {
     font-size: 0.9rem;
     line-height: 1.4;
-    padding: 8px 12px;
+    flex: 1;
+    padding-right: 30px;
 }
 
 #notification-dropdown small {
     display: block;
     font-size: 0.7rem;
     color: #999;
-    padding: 0 12px 8px 12px;
+    width: 100%;
+    margin-top: 2px;
+}
+
+#notification-dropdown .notif-delete {
+    position: absolute;
+    top: 8px;
+    right: 10px;
+    background: none;
+    border: none;
+    color: #ccc;
+    cursor: pointer;
+    font-size: 0.8rem;
+    padding: 2px 6px;
+    border-radius: 3px;
+    transition: all 0.2s;
+    line-height: 1;
+    z-index: 5;
+}
+
+#notification-dropdown .notif-delete:hover {
+    color: #d63638;
+    background: rgba(214, 54, 56, 0.1);
 }
 
 #notification-dropdown .notif-footer {
     padding: 8px 12px;
     text-align: center;
     border-top: 1px solid #eee;
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+    flex-wrap: wrap;
 }
 
 #notification-dropdown .notif-footer button {
@@ -101,8 +146,13 @@
     color: #0073aa;
     cursor: pointer;
     font-size: 0.85rem;
+    padding: 4px 10px;
 }
 
 #notification-dropdown .notif-footer button:hover {
     text-decoration: underline;
+}
+
+.main-header-menu .menu-item {
+    overflow: visible !important;
 }

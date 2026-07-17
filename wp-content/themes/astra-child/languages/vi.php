@@ -194,9 +194,38 @@ return [
     'game_play_now'  => 'Chơi ngay →',
     'game_speed' => 'Tốc độ',
     'game_top_speed' => 'Tốc độ tối đa',
+
     //noti
     'notification_new_message' => '%s đã gửi tin nhắn',
     'notification_invited' => '%s đã mời bạn tham gia "%s"',
     'notification_left' => '%s đã rời khỏi phòng "%s"',
+    'notify_new_car_content'        => 'Xe mới: %s',
+    'notify_new_banner_content'     => 'Banner mới: %s',
+    'notify_new_team_content'       => 'Thành viên mới: %s',
+
+    // ===== Site‑wide Notifications & Settings =====
+    'settings_title'                => 'Cài đặt của bạn',
+    'settings_notifications'        => 'Tùy chọn thông báo',
+    'settings_cars_label'           => 'Xe mới',
+    'settings_cars_desc'            => 'Nhận thông báo khi có tin xe mới được thêm.',
+    'settings_banners_teams_label'  => 'Banner & Đội ngũ',
+    'settings_banners_teams_desc'   => 'Bạn tự động nhận thông báo về Banner và Thành viên mới (chỉ admin/editor).',
+    'settings_save_button'          => 'Lưu cài đặt',
+    'settings_saved'                => 'Cài đặt đã được lưu.',
+    'settings_nonce_error'          => 'Kiểm tra bảo mật thất bại.',
+    'email_digest_subject' => '[%s] Cập nhật mới cho bạn!',
+    'email_digest_greeting' => 'Xin chào %s,',
+    'email_digest_intro' => 'Đây là những cập nhật mới nhất từ trang web của chúng tôi:',
+    'email_digest_footer' => 'Bạn nhận được email này vì đã đăng ký nhận thông báo trên trang web của chúng tôi.',
+    'email_digest_manage' => 'Quản lý tùy chọn email của bạn',
+    'email_digest_unsubscribe' => 'Hủy đăng ký tất cả email',
+    'settings_email_cars_desc' => 'Cũng gửi thông báo qua email cho tôi về xe mới.',
+    'settings_email_banner_desc' => 'Cũng gửi thông báo qua email cho tôi về banner mới.',
+    'settings_email_team_desc' => 'Cũng gửi thông báo qua email cho tôi về thành viên mới.',
+    'settings_teams_label' => 'Thành viên',
+    'settings_teams_desc' => 'Bạn tự động nhận thông báo về Thành viên mới (chỉ admin/editor).',
+    'settings_admin_title' => 'Công cụ quản trị',
+    'settings_process_queue' => 'Xử lý hàng đợi email ngay',
+    'settings_queue_note' => 'Xử lý thủ công hàng đợi email để kiểm tra.',
     
 ];

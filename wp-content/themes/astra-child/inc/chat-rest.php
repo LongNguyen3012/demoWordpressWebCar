@@ -78,7 +78,6 @@ function chat_register_routes() {
         'permission_callback' => 'chat_rest_require_login'
     ));
 
-    // Notifications
     register_rest_route('mytheme/v1', '/chat/notifications', array(
         'methods'  => 'GET',
         'callback' => 'chat_rest_get_notifications',
@@ -92,6 +91,17 @@ function chat_register_routes() {
     register_rest_route('mytheme/v1', '/chat/notifications/read-all', array(
         'methods'  => 'POST',
         'callback' => 'chat_rest_mark_all_notifications_read',
+        'permission_callback' => 'chat_rest_require_login'
+    ));
+    register_rest_route('mytheme/v1', '/chat/notifications/(?P<id>\d+)', array(
+        'methods'  => 'DELETE',
+        'callback' => 'chat_rest_delete_notification',
+        'permission_callback' => 'chat_rest_require_login'
+    ));
+
+    register_rest_route('mytheme/v1', '/chat/notifications/clear-read', array(
+        'methods'  => 'POST',
+        'callback' => 'chat_rest_clear_read_notifications',
         'permission_callback' => 'chat_rest_require_login'
     ));
 }
@@ -118,6 +128,21 @@ function chat_rest_get_rooms($request) {
         return new WP_Error('not_logged_in', 'User not logged in', array('status' => 401));
     }
     $rooms = chat_get_user_rooms($user_id);
+    foreach ($rooms as $room) {
+        if ($room->type === 'direct') {
+            $members = chat_get_room_members($room->id);
+            $other_user_id = array_filter($members, function($id) use ($user_id) {
+                return (int)$id !== (int)$user_id;
+            });
+            $other_user_id = reset($other_user_id);
+            if ($other_user_id) {
+                $other_user = get_userdata($other_user_id);
+                if ($other_user) {
+                    $room->name = $other_user->display_name;
+                }
+            }
+        }
+    }
     return rest_ensure_response($rooms);
 }
 
@@ -214,7 +239,6 @@ function chat_rest_post_message($request) {
     $message_id = $wpdb->insert_id;
     chat_notify_websocket_server($message_id);
 
-    // Notify other members
     $members = chat_get_room_members($room_id);
     $current_user = $user_id;
     $user_name = wp_get_current_user()->display_name;
@@ -347,7 +371,6 @@ function chat_rest_leave_room($request) {
     }
     chat_notify_websocket_member_removed($room_id, $user_id);
 
-    // Notify remaining members
     $members = chat_get_room_members($room_id);
     $user_name = wp_get_current_user()->display_name;
     $room_name = $room->name ?: 'Room';
@@ -375,7 +398,6 @@ function chat_rest_invite_user($request) {
     chat_add_member($room_id, $target_user_id);
     chat_notify_websocket_member_added($room_id, $target_user_id);
 
-    // Notify the invited user
     $inviter_name = wp_get_current_user()->display_name;
     global $wpdb;
     $room = $wpdb->get_row($wpdb->prepare("SELECT name FROM {$wpdb->prefix}chat_rooms WHERE id = %d", $room_id));
@@ -389,7 +411,6 @@ function chat_rest_invite_user($request) {
     return rest_ensure_response(array('success' => true));
 }
 
-// ---- Notification endpoints ----
 function chat_rest_get_notifications($request) {
     $user_id = get_current_user_id();
     global $wpdb;
@@ -439,18 +460,23 @@ function chat_rest_mark_all_notifications_read($request) {
     return rest_ensure_response(array('success' => true));
 }
 
-// ---- WebSocket notification helper ----
 function chat_notify_websocket_notification($user_id, $notification) {
     $base = defined('CHAT_NODE_SERVER_URL') ? CHAT_NODE_SERVER_URL : 'http://localhost:3000';
     $node_url = $base . '/new-notification';
-    wp_remote_post($node_url, array(
+    error_log('Attempting to notify Node for user ' . $user_id . ' at ' . $node_url);
+    $response = wp_remote_post($node_url, array(
         'body'    => json_encode(array('user_id' => $user_id, 'notification' => $notification)),
         'headers' => array('Content-Type' => 'application/json'),
         'timeout' => 0.5,
     ));
+    if (is_wp_error($response)) {
+        error_log('Node notification failed: ' . $response->get_error_message());
+    } else {
+        $code = wp_remote_retrieve_response_code($response);
+        error_log('Node notification response: HTTP ' . $code);
+    }
 }
 
-// ---- Existing WebSocket notifications ----
 function chat_notify_websocket_server($message_id) {
     global $wpdb;
     $table = $wpdb->prefix . 'chat_messages';
@@ -570,7 +596,6 @@ function chat_notify_websocket_member_removed($room_id, $user_id) {
     ));
 }
 
-// ---- Reactions and Read (unchanged) ----
 function chat_rest_add_reaction($request) {
     $user_id = get_current_user_id();
     if (!$user_id) {
@@ -623,4 +648,36 @@ function chat_rest_mark_read($request) {
     chat_mark_read($room_id, $user_id, $last_message_id);
     chat_notify_websocket_read($room_id, $user_id, $last_message_id);
     return rest_ensure_response(array('success' => true));
+}
+
+function chat_rest_delete_notification($request) {
+    $user_id = get_current_user_id();
+    $notif_id = (int) $request->get_param('id');
+    global $wpdb;
+    $table = $wpdb->prefix . 'chat_notifications';
+    $result = $wpdb->delete(
+        $table,
+        array('id' => $notif_id, 'user_id' => $user_id)
+    );
+    if ($result === false) {
+        return new WP_Error('db_error', 'Could not delete notification', array('status' => 500));
+    }
+    if ($result === 0) {
+        return new WP_Error('not_found', 'Notification not found', array('status' => 404));
+    }
+    return rest_ensure_response(array('success' => true));
+}
+
+function chat_rest_clear_read_notifications($request) {
+    $user_id = get_current_user_id();
+    global $wpdb;
+    $table = $wpdb->prefix . 'chat_notifications';
+    $result = $wpdb->delete(
+        $table,
+        array('user_id' => $user_id, 'is_read' => 1)
+    );
+    if ($result === false) {
+        return new WP_Error('db_error', 'Could not clear read notifications', array('status' => 500));
+    }
+    return rest_ensure_response(array('success' => true, 'deleted_count' => (int)$result));
 }

@@ -55,6 +55,10 @@ require_once ASTRA_CHILD_INC_DIR . 'game-enqueue.php';
 
 require_once ASTRA_CHILD_INC_DIR . 'nav-menu-custom.php';
 
+require_once ASTRA_CHILD_INC_DIR . 'notification-handler.php';
+require_once ASTRA_CHILD_INC_DIR . 'email-queue.php';
+require_once ASTRA_CHILD_INC_DIR . 'email-unsub.php';
+
 add_action( 'init', 'astra_child_init_language' );
 function astra_child_init_language() {
     if ( session_status() === PHP_SESSION_NONE ) {

@@ -49,6 +49,9 @@ services:
       dockerfile: Dockerfile
     ports:
       - "8080:8080"
+    volumes:
+      - ./chat-server:/app         
+      - /app/node_modules          
     environment:
       - WP_URL=http://wordpress:80
     restart: unless-stopped

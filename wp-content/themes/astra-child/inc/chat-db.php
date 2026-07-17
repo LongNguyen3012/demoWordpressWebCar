@@ -417,6 +417,7 @@ function chat_create_notification($user_id, $type, $content, $link = '') {
     );
     $notif_id = $wpdb->insert_id;
     if ($notif_id) {
+        error_log('[DEBUG] Notification inserted, ID ' . $notif_id . ' for user ' . $user_id);
         $notif = (object) array(
             'id'         => $notif_id,
             'user_id'    => $user_id,
@@ -426,6 +427,9 @@ function chat_create_notification($user_id, $type, $content, $link = '') {
             'is_read'    => 0,
             'created_at' => current_time('mysql')
         );
+        error_log('[DEBUG] Calling chat_notify_websocket_notification for user ' . $user_id);
         chat_notify_websocket_notification($user_id, $notif);
+    } else {
+        error_log('[DEBUG] Notification insert failed for user ' . $user_id);
     }
 }
