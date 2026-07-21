@@ -11,7 +11,7 @@ function chat_enqueue_scripts() {
         'chat-config',
         $js_dir . 'config.js',
         array(),
-        '4.6',
+        '4.7',
         true
     );
 
@@ -28,7 +28,7 @@ function chat_enqueue_scripts() {
         'chat-api',
         $js_dir . 'api.js',
         array('chat-config'),
-        '4.6',
+        '4.7',
         true
     );
 
@@ -36,7 +36,7 @@ function chat_enqueue_scripts() {
         'chat-ui',
         $js_dir . 'ui.js',
         array('chat-config'),
-        '4.6',
+        '4.7',
         true
     );
 
@@ -44,7 +44,7 @@ function chat_enqueue_scripts() {
         'chat-app',
         $js_dir . 'app.js',
         array('chat-config', 'chat-api', 'chat-ui'),
-        '4.6',
+        '4.7',
         true
     );
 }

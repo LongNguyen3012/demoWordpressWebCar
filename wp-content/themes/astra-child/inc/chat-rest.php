@@ -98,10 +98,21 @@ function chat_register_routes() {
         'callback' => 'chat_rest_delete_notification',
         'permission_callback' => 'chat_rest_require_login'
     ));
-
     register_rest_route('mytheme/v1', '/chat/notifications/clear-read', array(
         'methods'  => 'POST',
         'callback' => 'chat_rest_clear_read_notifications',
+        'permission_callback' => 'chat_rest_require_login'
+    ));
+
+    register_rest_route('mytheme/v1', '/chat/upload', array(
+        'methods'  => 'POST',
+        'callback' => 'chat_rest_upload_file',
+        'permission_callback' => 'chat_rest_require_login'
+    ));
+
+    register_rest_route('mytheme/v1', '/chat/messages/search', array(
+        'methods'  => 'GET',
+        'callback' => 'chat_rest_search_messages',
         'permission_callback' => 'chat_rest_require_login'
     ));
 }
@@ -128,6 +139,7 @@ function chat_rest_get_rooms($request) {
         return new WP_Error('not_logged_in', 'User not logged in', array('status' => 401));
     }
     $rooms = chat_get_user_rooms($user_id);
+    // For direct rooms, override the name with the other participant's name
     foreach ($rooms as $room) {
         if ($room->type === 'direct') {
             $members = chat_get_room_members($room->id);
@@ -191,10 +203,11 @@ function chat_rest_get_room_messages($request) {
     if (!chat_is_user_member_of_room($user_id, $room_id)) {
         return new WP_Error('forbidden', 'You are not a member of this room', array('status' => 403));
     }
-    $limit = $request->get_param('limit') ?: 50;
+    $limit = $request->get_param('limit') ?: 30;
     $offset = $request->get_param('offset') ?: 0;
+    $before = $request->get_param('before') ? (int)$request->get_param('before') : null;
     $is_admin = current_user_can('manage_options');
-    $messages = chat_get_messages_by_room($room_id, $limit, $offset, $is_admin);
+    $messages = chat_get_messages_by_room($room_id, $limit, $offset, $is_admin, $before);
 
     $message_ids = array_column($messages, 'id');
     $reactions_by_msg = [];
@@ -203,13 +216,23 @@ function chat_rest_get_room_messages($request) {
     }
     foreach ($messages as &$msg) {
         $msg->reactions = isset($reactions_by_msg[$msg->id]) ? $reactions_by_msg[$msg->id] : [];
+        if ($msg->attachment) {
+            $msg->attachment = json_decode($msg->attachment, true);
+        }
+    }
+
+    $has_more = false;
+    if (count($messages) === $limit) {
+        $oldest_id = $messages[count($messages) - 1]->id;
+        $has_more = true;
     }
 
     $last_read = chat_get_user_last_read($room_id, $user_id);
 
     return rest_ensure_response([
         'messages' => array_reverse($messages),
-        'last_read_message_id' => $last_read ? (int)$last_read : null
+        'last_read_message_id' => $last_read ? (int)$last_read : null,
+        'has_more' => $has_more
     ]);
 }
 
@@ -220,8 +243,9 @@ function chat_rest_post_message($request) {
     }
     $room_id = (int) $request->get_param('room_id');
     $message = sanitize_textarea_field($request->get_param('message'));
-    if (empty($room_id) || empty($message)) {
-        return new WP_Error('missing_fields', 'room_id and message are required', array('status' => 400));
+    $attachment = $request->get_param('attachment');
+    if (empty($room_id) || (empty($message) && empty($attachment))) {
+        return new WP_Error('missing_fields', 'room_id and message or attachment are required', array('status' => 400));
     }
     if (!chat_is_user_member_of_room($user_id, $room_id)) {
         return new WP_Error('forbidden', 'You are not a member of this room', array('status' => 403));
@@ -231,7 +255,7 @@ function chat_rest_post_message($request) {
         return new WP_Error('rate_limit', 'Please wait before sending another message', array('status' => 429));
     }
     set_transient('chat_last_sent_' . $user_id, time(), 5);
-    $inserted = chat_insert_message($room_id, $user_id, $message);
+    $inserted = chat_insert_message($room_id, $user_id, $message, $attachment);
     if (!$inserted) {
         return new WP_Error('db_error', 'Could not save message', array('status' => 500));
     }
@@ -246,11 +270,19 @@ function chat_rest_post_message($request) {
     $chat_url = $chat_page ? get_permalink($chat_page) : home_url('/');
     foreach ($members as $member) {
         if ((int)$member === (int)$current_user) continue;
-        $content = sprintf(__t('notification_new_message', '%s sent a message'), $user_name);
+        // Get room name for content
+        $room = $wpdb->get_row($wpdb->prepare("SELECT name, type FROM {$wpdb->prefix}chat_rooms WHERE id = %d", $room_id));
+        $room_name = $room->name ?: 'Room';
+        if ($room->type === 'direct') {
+            $other_user = get_userdata($member);
+            $room_name = $other_user ? $other_user->display_name : 'User';
+            $content = sprintf(__t('notification_new_message_direct', '%s sent you a message'), $user_name);
+        } else {
+            $content = sprintf(__t('notification_new_message_group', '%s sent a message in %s'), $user_name, $room_name);
+        }
         $link = add_query_arg('room', $room_id, $chat_url);
-        chat_create_notification($member, 'message', $content, $link);
+        chat_create_notification($member, 'message', $content, $link, $room_id);
     }
-
     return rest_ensure_response(array('success' => true, 'id' => $message_id));
 }
 
@@ -335,6 +367,9 @@ function chat_rest_get_single_message($request) {
     ));
     if (!$message) {
         return new WP_Error('not_found', 'Message not found', array('status' => 404));
+    }
+    if ($message->attachment) {
+        $message->attachment = json_decode($message->attachment, true);
     }
     return rest_ensure_response($message);
 }
@@ -460,6 +495,8 @@ function chat_rest_mark_all_notifications_read($request) {
     return rest_ensure_response(array('success' => true));
 }
 
+// --- WebSocket broadcast functions with attachment decoding ---
+
 function chat_notify_websocket_notification($user_id, $notification) {
     $base = defined('CHAT_NODE_SERVER_URL') ? CHAT_NODE_SERVER_URL : 'http://localhost:3000';
     $node_url = $base . '/new-notification';
@@ -490,6 +527,9 @@ function chat_notify_websocket_server($message_id) {
     if (!$message) {
         error_log('[chat] No message found for ID ' . $message_id);
         return;
+    }
+    if ($message->attachment) {
+        $message->attachment = json_decode($message->attachment, true);
     }
 
     $base = defined('CHAT_NODE_SERVER_URL') ? CHAT_NODE_SERVER_URL : 'http://localhost:3000';
@@ -525,6 +565,9 @@ function chat_notify_websocket_new_room($room_data) {
 }
 
 function chat_notify_websocket_update_message($message) {
+    if (isset($message->attachment) && $message->attachment) {
+        $message->attachment = json_decode($message->attachment, true);
+    }
     $base = defined('CHAT_NODE_SERVER_URL') ? CHAT_NODE_SERVER_URL : 'http://localhost:3000';
     $node_url = $base . '/update-message';
     $response = wp_remote_post($node_url, array(
@@ -538,6 +581,9 @@ function chat_notify_websocket_update_message($message) {
 }
 
 function chat_notify_websocket_delete_message($message) {
+    if (isset($message->attachment) && $message->attachment) {
+        $message->attachment = json_decode($message->attachment, true);
+    }
     $base = defined('CHAT_NODE_SERVER_URL') ? CHAT_NODE_SERVER_URL : 'http://localhost:3000';
     $node_url = $base . '/delete-message';
     $response = wp_remote_post($node_url, array(
@@ -595,6 +641,8 @@ function chat_notify_websocket_member_removed($room_id, $user_id) {
         'timeout' => 0.5,
     ));
 }
+
+// --- Reactions and Read (unchanged) ---
 
 function chat_rest_add_reaction($request) {
     $user_id = get_current_user_id();
@@ -680,4 +728,75 @@ function chat_rest_clear_read_notifications($request) {
         return new WP_Error('db_error', 'Could not clear read notifications', array('status' => 500));
     }
     return rest_ensure_response(array('success' => true, 'deleted_count' => (int)$result));
+}
+
+// File upload endpoint
+function chat_rest_upload_file($request) {
+    $user_id = get_current_user_id();
+    if (!$user_id) {
+        return new WP_Error('not_logged_in', 'User not logged in', array('status' => 401));
+    }
+
+    if (empty($_FILES['file'])) {
+        return new WP_Error('no_file', 'No file uploaded', array('status' => 400));
+    }
+
+    $file = $_FILES['file'];
+    $allowed_types = array('image/jpeg', 'image/png', 'image/gif', 'image/webp', 'application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document');
+    $finfo = finfo_open(FILEINFO_MIME_TYPE);
+    $mime_type = finfo_file($finfo, $file['tmp_name']);
+    finfo_close($finfo);
+
+    if (!in_array($mime_type, $allowed_types)) {
+        return new WP_Error('invalid_type', 'File type not allowed. Allowed: JPG, PNG, GIF, WebP, PDF, DOC, DOCX', array('status' => 400));
+    }
+
+    require_once(ABSPATH . 'wp-admin/includes/file.php');
+    require_once(ABSPATH . 'wp-admin/includes/media.php');
+    require_once(ABSPATH . 'wp-admin/includes/image.php');
+
+    $attachment_id = media_handle_upload('file', 0);
+    if (is_wp_error($attachment_id)) {
+        return new WP_Error('upload_failed', $attachment_id->get_error_message(), array('status' => 500));
+    }
+
+    $attachment_url = wp_get_attachment_url($attachment_id);
+    $attachment_data = get_post($attachment_id);
+    $attachment = array(
+        'id'   => $attachment_id,
+        'url'  => $attachment_url,
+        'name' => $attachment_data->post_title,
+        'type' => $mime_type,
+        'size' => filesize(get_attached_file($attachment_id)),
+    );
+
+    return rest_ensure_response(array('success' => true, 'attachment' => $attachment));
+}
+
+function chat_rest_search_messages($request) {
+    $user_id = get_current_user_id();
+    if (!$user_id) {
+        return new WP_Error('not_logged_in', 'User not logged in', array('status' => 401));
+    }
+
+    $query = trim($request->get_param('q'));
+    if (empty($query)) {
+        return new WP_Error('missing_query', 'Search query is required', array('status' => 400));
+    }
+
+    if (strlen($query) < 2) {
+        return new WP_Error('query_too_short', 'Search query must be at least 2 characters', array('status' => 400));
+    }
+
+    $room_id = $request->get_param('room_id') ? (int)$request->get_param('room_id') : null;
+    $limit = min(100, $request->get_param('limit') ? (int)$request->get_param('limit') : 20);
+    $is_admin = current_user_can('manage_options');
+
+    $messages = chat_search_messages($user_id, $query, $room_id, $limit, $is_admin);
+
+    if (is_wp_error($messages)) {
+        return $messages;
+    }
+
+    return rest_ensure_response($messages);
 }

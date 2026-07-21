@@ -24,22 +24,26 @@ class ChatAPI {
         return res.json();
     }
 
-    async postMessage(roomId, message) {
-        var res = await fetch(this.restUrl + '/messages', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-WP-Nonce': this.nonce
-            },
-            body: JSON.stringify({ room_id: roomId, message: message }),
-            credentials: 'include'
-        });
-        if (!res.ok) {
-            var err = await res.json();
-            throw new Error(err.message || 'Failed to send');
+        async postMessage(roomId, message, attachment) {
+            var payload = { room_id: roomId, message: message };
+            if (attachment) {
+                payload.attachment = attachment;
+            }
+            var res = await fetch(this.restUrl + '/messages', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-WP-Nonce': this.nonce
+                },
+                body: JSON.stringify(payload),
+                credentials: 'include'
+            });
+            if (!res.ok) {
+                var err = await res.json();
+                throw new Error(err.message || 'Failed to send');
+            }
+            return res.json();
         }
-        return res.json();
-    }
 
     async updateMessage(messageId, newMessage) {
         var res = await fetch(this.restUrl + '/messages/' + messageId, {

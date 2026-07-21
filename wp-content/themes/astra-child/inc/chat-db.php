@@ -23,6 +23,7 @@ function chat_create_tables() {
         room_id BIGINT(20) UNSIGNED NOT NULL,
         user_id BIGINT(20) UNSIGNED NOT NULL,
         message TEXT NOT NULL,
+        attachment TEXT NULL DEFAULT NULL,
         edited_at DATETIME NULL,
         deleted_at DATETIME NULL,
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
@@ -61,13 +62,16 @@ function chat_create_tables() {
     $sql_notifications = "CREATE TABLE $table_notifications (
         id BIGINT(20) UNSIGNED NOT NULL AUTO_INCREMENT,
         user_id BIGINT(20) UNSIGNED NOT NULL,
+        room_id BIGINT(20) UNSIGNED NULL DEFAULT NULL,
         type VARCHAR(50) NOT NULL DEFAULT 'message',
         content TEXT NOT NULL,
         link VARCHAR(255) DEFAULT '',
+        count INT DEFAULT 1,
         is_read TINYINT(1) DEFAULT 0,
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
         PRIMARY KEY (id),
         KEY user_id (user_id),
+        KEY room_id (room_id),
         KEY is_read (is_read)
     ) $charset_collate;";
 
@@ -83,8 +87,18 @@ function chat_create_tables() {
 function chat_upgrade_tables() {
     global $wpdb;
     $table_messages = $wpdb->prefix . 'chat_messages';
+    $table_notifications = $wpdb->prefix . 'chat_notifications';
     $wpdb->query("ALTER TABLE $table_messages ADD COLUMN edited_at DATETIME NULL AFTER message");
     $wpdb->query("ALTER TABLE $table_messages ADD COLUMN deleted_at DATETIME NULL AFTER edited_at");
+    $wpdb->query("ALTER TABLE $table_messages ADD COLUMN attachment TEXT NULL DEFAULT NULL AFTER message");
+
+    // Add room_id and count columns to notifications (if not exists)
+    if (!$wpdb->get_var("SHOW COLUMNS FROM $table_notifications LIKE 'room_id'")) {
+        $wpdb->query("ALTER TABLE $table_notifications ADD COLUMN room_id BIGINT(20) UNSIGNED NULL DEFAULT NULL AFTER user_id");
+    }
+    if (!$wpdb->get_var("SHOW COLUMNS FROM $table_notifications LIKE 'count'")) {
+        $wpdb->query("ALTER TABLE $table_notifications ADD COLUMN count INT DEFAULT 1 AFTER link");
+    }
 }
 
 function chat_create_reactions_and_read_tables() {
@@ -115,13 +129,16 @@ function chat_create_reactions_and_read_tables() {
     $sql_notifications = "CREATE TABLE $table_notifications (
         id BIGINT(20) UNSIGNED NOT NULL AUTO_INCREMENT,
         user_id BIGINT(20) UNSIGNED NOT NULL,
+        room_id BIGINT(20) UNSIGNED NULL DEFAULT NULL,
         type VARCHAR(50) NOT NULL DEFAULT 'message',
         content TEXT NOT NULL,
         link VARCHAR(255) DEFAULT '',
+        count INT DEFAULT 1,
         is_read TINYINT(1) DEFAULT 0,
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
         PRIMARY KEY (id),
         KEY user_id (user_id),
+        KEY room_id (room_id),
         KEY is_read (is_read)
     ) $charset_collate;";
 
@@ -214,31 +231,42 @@ function chat_get_room_members($room_id) {
     ));
 }
 
-function chat_get_messages_by_room($room_id, $limit = 50, $offset = 0, $is_admin = false) {
+function chat_get_messages_by_room($room_id, $limit = 50, $offset = 0, $is_admin = false, $before = null) {
     global $wpdb;
     $table_messages = $wpdb->prefix . 'chat_messages';
     $deleted_condition = $is_admin ? '' : 'AND m.deleted_at IS NULL';
-    return $wpdb->get_results($wpdb->prepare(
+    $before_condition = '';
+    $params = array($room_id);
+    if ($before !== null) {
+        $before_condition = 'AND m.id < %d';
+        $params[] = $before;
+    }
+    $sql = $wpdb->prepare(
         "SELECT m.*, u.display_name as user_name
          FROM $table_messages m
          JOIN {$wpdb->users} u ON m.user_id = u.ID
-         WHERE m.room_id = %d $deleted_condition
+         WHERE m.room_id = %d $deleted_condition $before_condition
          ORDER BY m.created_at DESC
          LIMIT %d OFFSET %d",
-        $room_id, $limit, $offset
-    ));
+        array_merge($params, array($limit, $offset))
+    );
+    return $wpdb->get_results($sql);
 }
 
-function chat_insert_message($room_id, $user_id, $message) {
+function chat_insert_message($room_id, $user_id, $message, $attachment = null) {
     global $wpdb;
+    $data = array(
+        'room_id'   => $room_id,
+        'user_id'   => $user_id,
+        'message'   => $message,
+        'created_at'=> current_time('mysql'),
+    );
+    if ($attachment !== null) {
+        $data['attachment'] = json_encode($attachment);
+    }
     return $wpdb->insert(
         $wpdb->prefix . 'chat_messages',
-        array(
-            'room_id'   => $room_id,
-            'user_id'   => $user_id,
-            'message'   => $message,
-            'created_at'=> current_time('mysql'),
-        )
+        $data
     );
 }
 
@@ -401,16 +429,55 @@ function chat_remove_member($room_id, $user_id) {
     return $wpdb->delete($wpdb->prefix . 'chat_room_members', array('room_id' => $room_id, 'user_id' => $user_id));
 }
 
-function chat_create_notification($user_id, $type, $content, $link = '') {
+function chat_create_notification($user_id, $type, $content, $link = '', $room_id = null) {
     global $wpdb;
     $table = $wpdb->prefix . 'chat_notifications';
+
+    if ($type === 'message' && $room_id !== null) {
+        // Check for existing unread notification for this user, room, type
+        $existing = $wpdb->get_row($wpdb->prepare(
+            "SELECT id, count FROM $table WHERE user_id = %d AND room_id = %d AND type = 'message' AND is_read = 0",
+            $user_id, $room_id
+        ));
+        if ($existing) {
+            // Increment count and update timestamp
+            $wpdb->update(
+                $table,
+                array(
+                    'count' => $existing->count + 1,
+                    'created_at' => current_time('mysql')
+                ),
+                array('id' => $existing->id)
+            );
+            $notif_id = $existing->id;
+            // Build updated notification object
+            $notif = (object) array(
+                'id'         => $notif_id,
+                'user_id'    => $user_id,
+                'room_id'    => $room_id,
+                'type'       => $type,
+                'content'    => $content,
+                'link'       => $link,
+                'count'      => $existing->count + 1,
+                'is_read'    => 0,
+                'created_at' => current_time('mysql')
+            );
+            error_log('[DEBUG] Updated existing notification ID ' . $notif_id . ' count ' . $notif->count);
+            chat_notify_websocket_notification($user_id, $notif);
+            return $notif_id;
+        }
+    }
+
+    // Insert new notification
     $wpdb->insert(
         $table,
         array(
             'user_id'    => $user_id,
+            'room_id'    => $room_id,
             'type'       => $type,
             'content'    => $content,
             'link'       => $link,
+            'count'      => 1,
             'is_read'    => 0,
             'created_at' => current_time('mysql')
         )
@@ -421,9 +488,11 @@ function chat_create_notification($user_id, $type, $content, $link = '') {
         $notif = (object) array(
             'id'         => $notif_id,
             'user_id'    => $user_id,
+            'room_id'    => $room_id,
             'type'       => $type,
             'content'    => $content,
             'link'       => $link,
+            'count'      => 1,
             'is_read'    => 0,
             'created_at' => current_time('mysql')
         );
@@ -432,4 +501,71 @@ function chat_create_notification($user_id, $type, $content, $link = '') {
     } else {
         error_log('[DEBUG] Notification insert failed for user ' . $user_id);
     }
+    return $notif_id;
+}
+
+function chat_add_fulltext_index() {
+    global $wpdb;
+    $table = $wpdb->prefix . 'chat_messages';
+    $index_exists = $wpdb->get_var("SHOW INDEX FROM $table WHERE Key_name = 'ft_message'");
+    if (!$index_exists) {
+        $wpdb->query("ALTER TABLE $table ADD FULLTEXT INDEX ft_message (message)");
+        error_log('Fulltext index added to chat_messages.');
+    }
+}
+add_action('admin_init', 'chat_add_fulltext_index');
+add_action('after_switch_theme', 'chat_add_fulltext_index');
+
+function chat_search_messages($user_id, $query, $room_id = null, $limit = 20, $is_admin = false) {
+    global $wpdb;
+    $table_messages = $wpdb->prefix . 'chat_messages';
+    $table_rooms = $wpdb->prefix . 'chat_rooms';
+    $table_members = $wpdb->prefix . 'chat_room_members';
+
+    $like = '%' . $wpdb->esc_like($query) . '%';
+
+    $sql = "SELECT m.*, u.display_name as user_name
+            FROM $table_messages m
+            JOIN {$wpdb->users} u ON m.user_id = u.ID
+            WHERE 1=1";
+
+    $params = array();
+
+    if (!$is_admin) {
+        $sql .= " AND m.deleted_at IS NULL";
+    }
+
+    if ($room_id) {
+        $is_member = $wpdb->get_var($wpdb->prepare(
+            "SELECT COUNT(*) FROM $table_members WHERE room_id = %d AND user_id = %d",
+            $room_id, $user_id
+        ));
+        if (!$is_member) {
+            return new WP_Error('forbidden', 'You are not a member of this room', array('status' => 403));
+        }
+        $sql .= " AND m.room_id = %d";
+        $params[] = $room_id;
+    } else {
+        $sql .= " AND m.room_id IN (SELECT room_id FROM $table_members WHERE user_id = %d)";
+        $params[] = $user_id;
+    }
+
+    $sql .= " AND m.message LIKE %s";
+    $params[] = $like;
+
+    $sql .= " ORDER BY m.created_at DESC";
+
+    $sql .= " LIMIT %d";
+    $params[] = $limit;
+
+    $prepared = $wpdb->prepare($sql, $params);
+    $results = $wpdb->get_results($prepared);
+
+    foreach ($results as &$msg) {
+        if ($msg->attachment) {
+            $msg->attachment = json_decode($msg->attachment, true);
+        }
+    }
+
+    return $results;
 }

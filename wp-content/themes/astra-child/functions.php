@@ -102,3 +102,23 @@ function enqueue_notification_scripts() {
         'wsUrl'   => defined('CHAT_WS_URL') ? CHAT_WS_URL : 'ws://localhost:8080',
     ));
 }
+
+if (!defined('EMAIL_QUEUE_SECRET_KEY')) {
+    if (file_exists(__DIR__ . '/../../../.env')) {
+        $env = parse_ini_file(__DIR__ . '/../../../.env');
+        if ($env && isset($env['EMAIL_QUEUE_SECRET_KEY'])) {
+            define('EMAIL_QUEUE_SECRET_KEY', $env['EMAIL_QUEUE_SECRET_KEY']);
+        }
+    }
+}
+if (!defined('EMAIL_QUEUE_SECRET_KEY')) {
+    define('EMAIL_QUEUE_SECRET_KEY', 's3cr3t_!@#_f0r_3m41l_qu3u3_7d1a4');
+    error_log('EMAIL_QUEUE_SECRET_KEY not defined, using default (update .env file)');
+}
+
+add_action('init', function() {
+    if (isset($_GET['process_emails']) && $_GET['process_emails'] === EMAIL_QUEUE_SECRET_KEY) {
+        email_queue_process_batch();
+        wp_die('Email queue processed successfully.');
+    }
+});

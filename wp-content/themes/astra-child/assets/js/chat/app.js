@@ -17,6 +17,14 @@ class ChatApp {
 
         this.activeRoomId = localStorage.getItem('chat_active_room') ? parseInt(localStorage.getItem('chat_active_room')) : null;
 
+        this.pendingAttachment = null;
+        this._highlightAttempts = {};
+
+        this.isLoadingMore = false;
+        this.hasMoreMessages = true;
+        this.oldestLoadedId = null;
+        this.messagesContainer = null;
+
         window.ChatApp = this;
         this.init();
     }
@@ -27,6 +35,64 @@ class ChatApp {
         this.bindEvents();
         this.setupTyping();
         this.bindPopState();
+        this.setupFileUpload();
+        this.setupSearch();
+        this.setupInfiniteScroll();
+    }
+
+    setupInfiniteScroll() {
+        this.messagesContainer = document.getElementById('chat-messages');
+        if (!this.messagesContainer) return;
+        this.messagesContainer.addEventListener('scroll', () => {
+            if (this.messagesContainer.scrollTop === 0 && !this.isLoadingMore && this.hasMoreMessages && this.currentRoomId) {
+                this.loadMoreMessages();
+            }
+        });
+    }
+
+    async loadMoreMessages() {
+        if (this.isLoadingMore || !this.hasMoreMessages || !this.currentRoomId) return;
+        this.isLoadingMore = true;
+        this.ui.showLoadingOlderMessages();
+
+        try {
+            const before = this.oldestLoadedId;
+            const url = this.api.restUrl + '/rooms/' + this.currentRoomId + '/messages?limit=20&before=' + before;
+            const res = await fetch(url, {
+                headers: { 'X-WP-Nonce': this.api.nonce },
+                credentials: 'include'
+            });
+            if (!res.ok) throw new Error('Failed to load older messages');
+            const data = await res.json();
+            let olderMessages = data.messages || [];
+            this.hasMoreMessages = data.has_more || false;
+
+            if (olderMessages.length > 0) {
+                const reversed = olderMessages.reverse();
+                const container = this.messagesContainer;
+                const firstChild = container.firstChild;
+                reversed.forEach(msg => {
+                    const div = this.ui.createMessageElement(msg, this.config.userId, this.config.isAdmin,
+                        (id, div) => { this.editMessage(id, div); },
+                        (id) => { this.deleteMessage(id); },
+                        (messageId, reaction) => { this.toggleReaction(messageId, reaction); }
+                    );
+                    container.insertBefore(div, firstChild);
+                });
+                this.oldestLoadedId = olderMessages[0] ? olderMessages[0].id : this.oldestLoadedId;
+                this.messagesContainer.scrollTop = 0;
+            }
+
+            if (!this.hasMoreMessages) {
+                this.ui.showNoMoreMessages();
+            }
+        } catch (err) {
+            console.error('Error loading more messages:', err);
+            this.ui.showError('Failed to load older messages');
+        } finally {
+            this.isLoadingMore = false;
+            this.ui.hideLoadingOlderMessages();
+        }
     }
 
     bindPopState() {
@@ -160,7 +226,6 @@ class ChatApp {
 
     async loadRooms() {
         try {
-            // Read URL parameter for room
             const urlParams = new URLSearchParams(window.location.search);
             let roomFromUrl = urlParams.has('room') ? parseInt(urlParams.get('room')) : null;
             console.log('[loadRooms] URL room param:', roomFromUrl);
@@ -171,7 +236,6 @@ class ChatApp {
 
             console.log('[loadRooms] Rooms loaded:', rooms.map(r => r.id));
 
-            // Determine target room: URL param > stored active > first
             let targetRoom = null;
             if (roomFromUrl && rooms.some(function(r) { return r.id == roomFromUrl; }.bind(this))) {
                 targetRoom = roomFromUrl;
@@ -187,7 +251,6 @@ class ChatApp {
             this.ui.renderRoomList(rooms, this.currentRoomId, function(roomId) { this.switchRoom(roomId); }.bind(this));
 
             if (targetRoom) {
-                // Always switch if targetRoom is different from current, or if we have a URL param (force switch)
                 if (targetRoom !== this.currentRoomId || roomFromUrl) {
                     console.log('[loadRooms] Switching to target room:', targetRoom);
                     this.switchRoom(targetRoom);
@@ -246,6 +309,8 @@ class ChatApp {
                 var response = await this.api.fetchMessages(roomId);
                 if (this._currentLoadRoomId !== roomId) return;
                 var messages = response.messages || response;
+                this.hasMoreMessages = response.has_more || false;
+                this.oldestLoadedId = messages.length > 0 ? messages[messages.length - 1].id : null;
                 if (Array.isArray(response)) {
                     messages = response;
                     this.ui.clearMessages();
@@ -461,14 +526,51 @@ class ChatApp {
         });
     }
 
+    setupFileUpload() {
+        const picker = document.getElementById('file-picker');
+        const fileInput = document.getElementById('file-input');
+        if (picker && fileInput) {
+            picker.addEventListener('click', () => {
+                fileInput.click();
+            });
+            fileInput.addEventListener('change', (e) => {
+                if (e.target.files.length > 0) {
+                    this.uploadFile(e.target.files[0]);
+                }
+                fileInput.value = '';
+            });
+        }
+    }
+
+    async uploadFile(file) {
+        const formData = new FormData();
+        formData.append('file', file);
+        try {
+            const res = await fetch(this.api.restUrl + '/upload', {
+                method: 'POST',
+                headers: { 'X-WP-Nonce': this.api.nonce },
+                body: formData,
+                credentials: 'include'
+            });
+            if (!res.ok) throw new Error('Upload failed');
+            const data = await res.json();
+            this.pendingAttachment = data.attachment;
+            this.ui.showFilePreview(data.attachment);
+        } catch (err) {
+            this.ui.showError('File upload failed: ' + err.message);
+        }
+    }
+
     async sendMessage() {
         var msg = this.ui.elements.messageInput.value.trim();
-        if (!msg || !this.currentRoomId) return;
+        if (!msg && !this.pendingAttachment) return;
         this.ui.elements.sendButton.disabled = true;
         this.ui.elements.sendButton.textContent = 'Sending...';
         try {
-            await this.api.postMessage(this.currentRoomId, msg);
+            await this.api.postMessage(this.currentRoomId, msg, this.pendingAttachment);
             this.ui.elements.messageInput.value = '';
+            this.pendingAttachment = null;
+            this.ui.clearFilePreview();
         } catch (err) {
             this.ui.showError(err.message);
         } finally {
@@ -477,6 +579,110 @@ class ChatApp {
                 this.ui.elements.sendButton.textContent = 'Send';
             }.bind(this), 5000);
         }
+    }
+
+    setupSearch() {
+        const toggleBtn = document.getElementById('search-toggle');
+        const searchInput = document.getElementById('search-messages');
+        let searchVisible = false;
+
+        if (!toggleBtn || !searchInput) return;
+
+        toggleBtn.addEventListener('click', () => {
+            searchVisible = !searchVisible;
+            searchInput.style.display = searchVisible ? 'inline-block' : 'none';
+            if (searchVisible) {
+                searchInput.focus();
+            }
+        });
+
+        searchInput.addEventListener('keydown', async (e) => {
+            if (e.key === 'Enter') {
+                const query = searchInput.value.trim();
+                if (query.length < 2) return;
+                if (!this.currentRoomId) {
+                    alert('Please select a room first.');
+                    return;
+                }
+                try {
+                    const url = this.api.restUrl + '/messages/search?q=' + encodeURIComponent(query) + '&room_id=' + this.currentRoomId;
+                    const res = await fetch(url, {
+                        headers: { 'X-WP-Nonce': this.api.nonce },
+                        credentials: 'include'
+                    });
+                    if (!res.ok) throw new Error('Search failed');
+                    const results = await res.json();
+                    this.displaySearchResults(results, query);
+                } catch (err) {
+                    this.ui.showError('Search error: ' + err.message);
+                }
+            }
+        });
+    }
+
+    displaySearchResults(results, query) {
+        const oldOverlay = document.getElementById('search-overlay');
+        if (oldOverlay) oldOverlay.remove();
+
+        const overlay = document.createElement('div');
+        overlay.id = 'search-overlay';
+        overlay.style.cssText = 'position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:9999; display:flex; align-items:center; justify-content:center;';
+        overlay.addEventListener('click', (e) => { if (e.target === overlay) overlay.remove(); });
+
+        const panel = document.createElement('div');
+        panel.style.cssText = 'background:#fff; padding:20px; border-radius:8px; max-width:600px; width:90%; max-height:80vh; overflow-y:auto;';
+        panel.innerHTML = `<h3>Results for "${this.ui.escHtml(query)}" (${results.length})</h3>`;
+
+        if (results.length === 0) {
+            panel.innerHTML += '<p>No messages found.</p>';
+        } else {
+            const list = document.createElement('ul');
+            list.style.cssText = 'list-style:none; padding:0; margin:0;';
+            results.forEach(msg => {
+                const li = document.createElement('li');
+                li.style.cssText = 'padding:8px 0; border-bottom:1px solid #eee; cursor:pointer;';
+                li.innerHTML = `<strong>${this.ui.escHtml(msg.user_name)}</strong> <span style="color:#999;font-size:0.8rem;">${new Date(msg.created_at).toLocaleString()}</span><br>
+                                <span>${this.ui.escHtml(msg.message)}</span>`;
+                li.addEventListener('click', () => {
+                    overlay.remove();
+                    this.switchRoom(msg.room_id);
+                    const targetId = msg.id;
+                    const checkAndHighlight = () => {
+                        const el = document.querySelector(`div[data-message-id="${targetId}"]`);
+                        if (el) {
+                            el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                            el.style.transition = 'background 0.5s ease';
+                            el.style.backgroundColor = '#ffff99';
+                            setTimeout(() => {
+                                el.style.backgroundColor = '';
+                            }, 2000);
+                        } else {
+                            if (!this._highlightAttempts) this._highlightAttempts = {};
+                            if (!this._highlightAttempts[targetId]) this._highlightAttempts[targetId] = 0;
+                            this._highlightAttempts[targetId]++;
+                            if (this._highlightAttempts[targetId] < 5) {
+                                setTimeout(() => checkAndHighlight(), 300);
+                            } else {
+                                delete this._highlightAttempts[targetId];
+                                this.ui.showNotification('Message found but not visible in current view.');
+                            }
+                        }
+                    };
+                    setTimeout(() => checkAndHighlight(), 300);
+                });
+                list.appendChild(li);
+            });
+            panel.appendChild(list);
+        }
+
+        const closeBtn = document.createElement('button');
+        closeBtn.textContent = 'Close';
+        closeBtn.style.cssText = 'margin-top:15px; padding:6px 16px; background:#2C2C2C; color:#fff; border:none; border-radius:4px; cursor:pointer;';
+        closeBtn.addEventListener('click', () => overlay.remove());
+        panel.appendChild(closeBtn);
+
+        overlay.appendChild(panel);
+        document.body.appendChild(overlay);
     }
 
     showCreateRoomModal() {

@@ -29,6 +29,7 @@ services:
         define('CHAT_WS_URL', 'ws://localhost:8080');
     volumes:
       - ./wp-content:/var/www/html/wp-content
+      - ./.env:/var/www/html/.env
 
   phpmyadmin:
     image: phpmyadmin/phpmyadmin
@@ -50,11 +51,28 @@ services:
     ports:
       - "8080:8080"
     volumes:
-      - ./chat-server:/app         
-      - /app/node_modules          
+      - ./chat-server:/app
+      - /app/node_modules
     environment:
       - WP_URL=http://wordpress:80
     restart: unless-stopped
+
+  cron:
+    image: alpine:latest
+    container_name: demo_cron
+    restart: always
+    depends_on:
+      - wordpress
+    environment:
+      - TZ=Asia/Ho_Chi_Minh
+    env_file:
+      - .env
+    command: >
+      sh -c "
+        apk add --no-cache curl dcron &&
+        echo '0 7 * * * curl -s \"http://wordpress/?process_emails=$EMAIL_QUEUE_SECRET_KEY\"' > /etc/crontab &&
+        crond -f -L /dev/stdout
+      "
 
 volumes:
   db_data: {}

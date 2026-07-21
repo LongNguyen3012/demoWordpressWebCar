@@ -22,8 +22,7 @@ function email_queue_create_table() {
         PRIMARY KEY (id),
         KEY user_id (user_id),
         KEY sent (sent),
-        KEY queued_at (queued_at),
-        UNIQUE KEY user_post_sent (user_id, post_id, sent)
+        KEY queued_at (queued_at)
     ) $charset_collate;";
 
     require_once(ABSPATH . 'wp-admin/includes/upgrade.php');
@@ -34,15 +33,6 @@ add_action('after_switch_theme', 'email_queue_create_table');
 function email_queue_add($user_id, $type, $post_id, $content, $link) {
     global $wpdb;
     $table = $wpdb->prefix . 'email_queue';
-
-    // Prevent duplicate entries for same user, post, and type (only if unsent)
-    $existing = $wpdb->get_var($wpdb->prepare(
-        "SELECT id FROM $table WHERE user_id = %d AND post_id = %d AND type = %s AND sent = 0",
-        $user_id, $post_id, $type
-    ));
-    if ($existing) {
-        return;
-    }
 
     $wpdb->insert(
         $table,
@@ -255,6 +245,33 @@ function email_queue_process_batch() {
     }
 }
 
+function email_queue_schedule_cron() {
+    if (!wp_next_scheduled('email_queue_cron_hook')) {
+        wp_schedule_event(time(), 'every_five_minutes', 'email_queue_cron_hook');
+        error_log('Email queue cron scheduled.');
+    }
+}
+add_action('after_switch_theme', 'email_queue_schedule_cron');
+
+function email_queue_unschedule_cron() {
+    $timestamp = wp_next_scheduled('email_queue_cron_hook');
+    if ($timestamp) {
+        wp_unschedule_event($timestamp, 'email_queue_cron_hook');
+    }
+}
+add_action('switch_theme', 'email_queue_unschedule_cron');
+
+function email_queue_add_cron_interval($schedules) {
+    $schedules['every_five_minutes'] = array(
+        'interval' => 300,
+        'display'  => __('Every 5 Minutes', 'astra-child'),
+    );
+    return $schedules;
+}
+add_filter('cron_schedules', 'email_queue_add_cron_interval');
+
+add_action('email_queue_cron_hook', 'email_queue_process_batch');
+
 function email_queue_process_manually() {
     if (!current_user_can('manage_options')) {
         return;
@@ -271,3 +288,11 @@ function email_queue_admin_notice() {
     }
 }
 add_action('admin_notices', 'email_queue_admin_notice');
+
+function email_queue_ensure_cron_scheduled() {
+    if (!wp_next_scheduled('email_queue_cron_hook')) {
+        wp_schedule_event(time(), 'every_five_minutes', 'email_queue_cron_hook');
+        error_log('Email queue cron scheduled automatically (on init).');
+    }
+}
+add_action('init', 'email_queue_ensure_cron_scheduled');

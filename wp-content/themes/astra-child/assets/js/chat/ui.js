@@ -35,23 +35,28 @@ class ChatUI {
 
     setRoomHeader(room) {
         if (!room) {
-            this.elements.roomHeader.textContent = 'Select a room';
+            const titleSpan = document.getElementById('room-title');
+            if (titleSpan) titleSpan.textContent = 'Select a room';
             return;
         }
-        this.elements.roomHeader.innerHTML = '';
-        var titleSpan = document.createElement('span');
-        titleSpan.textContent = room.name || 'Room ' + room.id;
-        this.elements.roomHeader.appendChild(titleSpan);
-
+        const titleSpan = document.getElementById('room-title');
+        if (titleSpan) {
+            titleSpan.textContent = room.name || 'Room ' + room.id;
+        }
+        const actionsContainer = document.getElementById('room-header-actions');
+        if (!actionsContainer) return;
+        const existingBtn = actionsContainer.querySelector('.room-settings-btn');
+        if (existingBtn) existingBtn.remove();
         if (room.type !== 'direct') {
             var settingsBtn = document.createElement('button');
+            settingsBtn.className = 'room-settings-btn';
             settingsBtn.textContent = '⚙';
-            settingsBtn.style.cssText = 'margin-left:10px; background:none; border:none; font-size:1.2rem; cursor:pointer;';
+            settingsBtn.style.cssText = 'background:#f0f0f0; border:1px solid #ccc; border-radius:4px; font-size:1.2rem; cursor:pointer; padding:4px 8px; color:#333; line-height:1;';
             settingsBtn.addEventListener('click', function(e) {
                 e.stopPropagation();
                 this.showRoomSettings(room);
             }.bind(this));
-            this.elements.roomHeader.appendChild(settingsBtn);
+            actionsContainer.appendChild(settingsBtn);
         }
     }
 
@@ -167,17 +172,6 @@ class ChatUI {
         }
     }
 
-    updateReadReceipts(data) {
-        var readDiv = this.elements.messages.querySelector('.chat-read-receipt');
-        if (!readDiv) {
-            readDiv = document.createElement('div');
-            readDiv.className = 'chat-read-receipt';
-            readDiv.style.cssText = 'text-align:right; font-size:0.8rem; color:#999; padding:4px 10px;';
-            this.elements.messages.appendChild(readDiv);
-        }
-        readDiv.textContent = '✓ Seen';
-    }
-
     markMessagesRead(roomId, userId, lastMessageId) {
         if (parseInt(userId) === parseInt(this.userId)) return;
         if (parseInt(roomId) !== parseInt(this.currentRoomId)) return;
@@ -206,32 +200,14 @@ class ChatUI {
             var latestDiv = ownMessages[0];
             var statusSpan = document.createElement('span');
             statusSpan.className = 'read-status';
-            statusSpan.style.cssText = 'margin-left:8px; font-size:0.8rem; color:#4fc3f7;';
+            statusSpan.style.cssText = 'margin-left:8px; font-size:0.8rem; color:#4fc3f7; font-weight:bold;';
             statusSpan.textContent = '✓✓';
             latestDiv.appendChild(statusSpan);
         }
     }
 
     markMessagesReadUpTo(lastReadMessageId) {
-        var messages = this.elements.messages.querySelectorAll('div[data-message-id]');
-        messages.forEach(function(div) {
-            var id = parseInt(div.dataset.messageId);
-            if (id <= lastReadMessageId) {
-                var readMark = div.querySelector('.read-mark');
-                if (!readMark) {
-                    readMark = document.createElement('span');
-                    readMark.className = 'read-mark';
-                    readMark.style.cssText = 'margin-left:6px; color:#0a7e3c; font-size:0.8rem;';
-                    readMark.textContent = '✓';
-                    var timeSpan = div.querySelector('span[style*="color:#999;font-size:0.8rem;"]');
-                    if (timeSpan) {
-                        timeSpan.parentNode.insertBefore(readMark, timeSpan.nextSibling);
-                    } else {
-                        div.appendChild(readMark);
-                    }
-                }
-            }
-        });
+        return;
     }
 
     updateReaction(data) {
@@ -316,6 +292,62 @@ class ChatUI {
         this.renderReactions(msgDiv, messageId);
     }
 
+    renderAttachment(attachment) {
+        if (!attachment) return '';
+        if (typeof attachment === 'string') {
+            try {
+                attachment = JSON.parse(attachment);
+            } catch(e) {
+                return '';
+            }
+        }
+        const isImage = attachment.type && attachment.type.startsWith('image/');
+        const size = this.formatFileSize(attachment.size || 0);
+        const url = attachment.url || '#';
+        const name = attachment.name || 'File';
+        if (isImage) {
+            return `<div class="chat-attachment" style="margin-top:4px;">
+                <a href="${url}" target="_blank">
+                    <img src="${url}" style="max-width:200px; max-height:200px; border-radius:4px; border:1px solid #eee;" />
+                </a>
+                <div style="font-size:0.7rem; color:#999; margin-top:2px;">${name} (${size})</div>
+            </div>`;
+        } else {
+            return `<div class="chat-attachment" style="margin-top:4px; display:flex; align-items:center; gap:8px; background:#f5f5f5; padding:8px 12px; border-radius:4px;">
+                <span style="font-size:1.2rem;">📎</span>
+                <a href="${url}" target="_blank" style="text-decoration:none; color:#2C2C2C;">${name}</a>
+                <span style="font-size:0.8rem; color:#999;">(${size})</span>
+            </div>`;
+        }
+    }
+
+    formatFileSize(bytes) {
+        if (bytes < 1024) return bytes + ' B';
+        if (bytes < 1048576) return (bytes/1024).toFixed(1) + ' KB';
+        return (bytes/1048576).toFixed(1) + ' MB';
+    }
+
+    showFilePreview(attachment) {
+        const preview = document.createElement('div');
+        preview.id = 'file-preview';
+        preview.style.cssText = 'padding:4px 10px; background:#e8f0fe; border-radius:4px; margin-bottom:4px; display:flex; align-items:center; gap:8px; font-size:0.9rem;';
+        const name = attachment.name || 'File';
+        preview.innerHTML = `<span>📎 ${name}</span><span style="cursor:pointer; color:#d63638; margin-left:auto;" id="remove-file-preview">✕</span>`;
+        const inputContainer = this.elements.messageInput.parentNode;
+        const existing = document.getElementById('file-preview');
+        if (existing) existing.remove();
+        inputContainer.insertBefore(preview, this.elements.messageInput);
+        document.getElementById('remove-file-preview').addEventListener('click', () => {
+            this.clearFilePreview();
+            if (window.ChatApp) window.ChatApp.pendingAttachment = null;
+        });
+    }
+
+    clearFilePreview() {
+        const preview = document.getElementById('file-preview');
+        if (preview) preview.remove();
+    }
+
     appendMessage(msg, userId, isAdmin, onEdit, onDelete, onReaction) {
         if (this.typingIndicator) {
             this.typingIndicator.remove();
@@ -348,6 +380,10 @@ class ChatUI {
         var canEdit = isOwner || isAdmin;
         var actions = canEdit && !msg.deleted_at ? '<span style="float:right;font-size:0.8rem;"><a href="#" class="chat-edit" data-id="' + msg.id + '" style="margin-right:5px;">✎</a><a href="#" class="chat-delete" data-id="' + msg.id + '">✕</a></span>' : '';
         div.innerHTML = '<strong>' + this.escHtml(msg.user_name) + '</strong> <span style="color:#999;font-size:0.8rem;">' + time + '</span>' + actions + ': ' + content;
+
+        if (msg.attachment) {
+            div.innerHTML += this.renderAttachment(msg.attachment);
+        }
 
         var reactionBar = document.createElement('div');
         reactionBar.className = 'reaction-bar';
@@ -452,6 +488,10 @@ class ChatUI {
         var actions = canEdit && !msg.deleted_at ? '<span style="float:right;font-size:0.8rem;"><a href="#" class="chat-edit" data-id="' + msg.id + '" style="margin-right:5px;">✎</a><a href="#" class="chat-delete" data-id="' + msg.id + '">✕</a></span>' : '';
 
         div.innerHTML = '<strong>' + this.escHtml(msg.user_name) + '</strong> <span style="color:#999;font-size:0.8rem;">' + time + '</span>' + actions + ': ' + content;
+
+        if (msg.attachment) {
+            div.innerHTML += this.renderAttachment(msg.attachment);
+        }
 
         var existingStatus = div.querySelector('.read-status');
         if (existingStatus) {
@@ -639,6 +679,38 @@ class ChatUI {
         text = text.replace(/\(Deleted\)/g, '');
         text = text.replace(/✓✓?/g, '');
         return text.trim();
+    }
+
+    showLoadingOlderMessages() {
+        let indicator = document.getElementById('loading-older');
+        if (!indicator) {
+            indicator = document.createElement('div');
+            indicator.id = 'loading-older';
+            indicator.style.cssText = 'text-align:center; padding:8px; color:#999; font-size:0.9rem;';
+            indicator.textContent = 'Loading older messages...';
+            this.elements.messages.parentNode.insertBefore(indicator, this.elements.messages);
+        }
+        indicator.style.display = 'block';
+    }
+
+    hideLoadingOlderMessages() {
+        const indicator = document.getElementById('loading-older');
+        if (indicator) indicator.style.display = 'none';
+    }
+
+    showNoMoreMessages() {
+        let indicator = document.getElementById('no-more-messages');
+        if (!indicator) {
+            indicator = document.createElement('div');
+            indicator.id = 'no-more-messages';
+            indicator.style.cssText = 'text-align:center; padding:8px; color:#ccc; font-size:0.9rem;';
+            indicator.textContent = 'No more messages';
+            this.elements.messages.parentNode.insertBefore(indicator, this.elements.messages);
+        }
+        indicator.style.display = 'block';
+        setTimeout(() => {
+            if (indicator) indicator.style.display = 'none';
+        }, 3000);
     }
 
     showNoRooms() {
